@@ -1,0 +1,209 @@
+import { useRef, useCallback, useEffect } from 'react';
+import { Stage, Layer } from 'react-konva';
+import type Konva from 'konva';
+import { useStore } from '../store/index.ts';
+import { BackgroundLayer } from './BackgroundLayer.tsx';
+import { TokenGroup } from './TokenGroup.tsx';
+import { TransformerWrapper } from './TransformerWrapper.tsx';
+import { pxToMm } from '../utils/units.ts';
+import { clamp } from '../utils/math.ts';
+
+interface KonvaCanvasProps {
+  width: number;
+  height: number;
+}
+
+export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
+  const stageRef = useRef<Konva.Stage>(null);
+  const shiftHeld = useRef(false);
+
+  const tokens = useStore((s) => s.tokens);
+  const mode = useStore((s) => s.mode);
+  const selectedTokenIds = useStore((s) => s.selectedTokenIds);
+  const zoom = useStore((s) => s.zoom);
+  const panOffset = useStore((s) => s.panOffset);
+  const snapToGrid = useStore((s) => s.snapToGrid);
+  const gridSizeMm = useStore((s) => s.gridSizeMm);
+
+  const selectToken = useStore((s) => s.selectToken);
+  const addToSelection = useStore((s) => s.addToSelection);
+  const clearSelection = useStore((s) => s.clearSelection);
+  const updateTokenPosition = useStore((s) => s.updateTokenPosition);
+  const updateToken = useStore((s) => s.updateToken);
+  const setZoom = useStore((s) => s.setZoom);
+  const setPanOffset = useStore((s) => s.setPanOffset);
+  const openCropModal = useStore((s) => s.openCropModal);
+  const removeTokens = useStore((s) => s.removeTokens);
+
+  // Track shift key state
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') shiftHeld.current = true;
+
+      // Delete selected tokens
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedTokenIds.length > 0) {
+        // Don't delete if user is typing in an input
+        if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+        removeTokens(selectedTokenIds);
+      }
+
+      // Escape to deselect
+      if (e.key === 'Escape') {
+        clearSelection();
+      }
+
+      // Select all with Ctrl/Cmd+A
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+        e.preventDefault();
+        useStore.getState().selectTokens(tokens.map((t) => t.id));
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') shiftHeld.current = false;
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [selectedTokenIds, clearSelection, removeTokens, tokens]);
+
+  const handleStageClick = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // Click on empty area → deselect
+      if (e.target === e.target.getStage()) {
+        clearSelection();
+      }
+    },
+    [clearSelection]
+  );
+
+  const handleSelect = useCallback(
+    (id: string) => {
+      if (shiftHeld.current) {
+        addToSelection(id);
+      } else {
+        selectToken(id);
+      }
+    },
+    [selectToken, addToSelection]
+  );
+
+  const handleDblClick = useCallback(
+    (id: string) => {
+      openCropModal(id);
+    },
+    [openCropModal]
+  );
+
+  const handleDragEnd = useCallback(
+    (id: string, x: number, y: number) => {
+      let mmX = pxToMm(x);
+      let mmY = pxToMm(y);
+
+      if (snapToGrid) {
+        mmX = Math.round(mmX / gridSizeMm) * gridSizeMm;
+        mmY = Math.round(mmY / gridSizeMm) * gridSizeMm;
+      }
+
+      updateTokenPosition(id, mmX, mmY);
+    },
+    [snapToGrid, gridSizeMm, updateTokenPosition]
+  );
+
+  const handleTransformEnd = useCallback(
+    (id: string, node: Konva.Node) => {
+      const scaleX = node.scaleX();
+      const scaleY = node.scaleY();
+      const rotation = node.rotation();
+
+      node.scaleX(1);
+      node.scaleY(1);
+
+      const token = tokens.find((t) => t.id === id);
+      if (!token) return;
+
+      const newSizeMm = token.sizeMm * Math.max(scaleX, scaleY);
+
+      updateToken(id, {
+        sizeMm: Math.round(newSizeMm * 10) / 10,
+        rotation,
+        sizePreset: null,
+      });
+    },
+    [tokens, updateToken]
+  );
+
+  const handleWheel = useCallback(
+    (e: Konva.KonvaEventObject<WheelEvent>) => {
+      e.evt.preventDefault();
+
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      const scaleBy = 1.08;
+      const oldZoom = zoom;
+      const newZoom = e.evt.deltaY < 0
+        ? clamp(oldZoom * scaleBy, 0.2, 5)
+        : clamp(oldZoom / scaleBy, 0.2, 5);
+
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+
+      const mousePointTo = {
+        x: (pointer.x - panOffset.x) / oldZoom,
+        y: (pointer.y - panOffset.y) / oldZoom,
+      };
+
+      const newPanOffset = {
+        x: pointer.x - mousePointTo.x * newZoom,
+        y: pointer.y - mousePointTo.y * newZoom,
+      };
+
+      setZoom(newZoom);
+      setPanOffset(newPanOffset.x, newPanOffset.y);
+    },
+    [zoom, panOffset, setZoom, setPanOffset]
+  );
+
+  const isEditMode = mode === 'edit';
+  const sortedTokens = [...tokens].sort((a, b) => a.zIndex - b.zIndex);
+
+  return (
+    <Stage
+      ref={stageRef}
+      width={width}
+      height={height}
+      onClick={handleStageClick}
+      onTap={handleStageClick}
+      onWheel={handleWheel}
+    >
+      <BackgroundLayer zoom={zoom} panOffset={panOffset} />
+
+      <Layer scaleX={zoom} scaleY={zoom} x={panOffset.x} y={panOffset.y}>
+        {sortedTokens.map((token) => (
+          <TokenGroup
+            key={token.id}
+            token={token}
+            isSelected={selectedTokenIds.includes(token.id)}
+            draggable={isEditMode}
+            onSelect={handleSelect}
+            onDragEnd={handleDragEnd}
+            onTransformEnd={handleTransformEnd}
+            onDblClick={handleDblClick}
+          />
+        ))}
+      </Layer>
+
+      <Layer scaleX={zoom} scaleY={zoom} x={panOffset.x} y={panOffset.y}>
+        <TransformerWrapper
+          selectedIds={isEditMode ? selectedTokenIds : []}
+          stageRef={stageRef}
+        />
+      </Layer>
+    </Stage>
+  );
+}
