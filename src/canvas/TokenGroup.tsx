@@ -1,8 +1,10 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Group, Circle, Rect, Line, Image as KonvaImage } from 'react-konva';
 import type Konva from 'konva';
 import type { Token } from '../types/index.ts';
 import { useImageLoader } from '../hooks/useImageLoader.ts';
+import { useLibraryAssetImage } from '../hooks/useLibraryAssetImage.ts';
+import { useStore } from '../store/index.ts';
 import { mmToPx } from '../utils/units.ts';
 import { drawShapePath } from '../utils/shapes.ts';
 
@@ -27,6 +29,17 @@ export function TokenGroup({
 }: TokenGroupProps) {
   const groupRef = useRef<Konva.Group>(null);
   const image = useImageLoader(token.processedSrc);
+
+  // Library asset overlay image
+  const libraryAssets = useStore((s) => s.libraryAssets);
+  const libraryAsset = useMemo(
+    () =>
+      token.frame.libraryAssetId
+        ? libraryAssets.find((a) => a.id === token.frame.libraryAssetId) ?? null
+        : null,
+    [token.frame.libraryAssetId, libraryAssets]
+  );
+  const libraryAssetImage = useLibraryAssetImage(libraryAsset?.file ?? null);
 
   const sizePx = mmToPx(token.sizeMm);
   const x = mmToPx(token.position.x);
@@ -156,6 +169,17 @@ export function TokenGroup({
           />
         )}
       </Group>
+
+      {/* Library asset overlay (rendered on top of token, covering frame area) */}
+      {libraryAssetImage && (
+        <KonvaImage
+          image={libraryAssetImage}
+          x={-frameThicknessPx}
+          y={-frameThicknessPx}
+          width={totalSizePx}
+          height={totalSizePx}
+        />
+      )}
 
       {/* Selection indicator */}
       {isSelected && token.shape === 'circle' && (

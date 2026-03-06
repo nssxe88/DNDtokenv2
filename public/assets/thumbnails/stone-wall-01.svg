@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <filter id="stoneNoise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="5"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="#7A7A72" opacity="0.35"/>
+  <circle cx="256" cy="256" r="256" fill="#6A6A62" opacity="0.2" filter="url(#stoneNoise)"/>
+</svg>

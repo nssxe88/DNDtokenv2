@@ -8,6 +8,8 @@
  */
 
 import type { Token } from '../types/index.ts';
+import type { LibraryAsset } from '../types/index.ts';
+import { loadAssetImage } from './assetLoader.ts';
 
 /** Load an image from a src URL, returning an HTMLImageElement */
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -20,16 +22,33 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Try to load the library asset overlay image for a token. */
+async function loadLibraryOverlay(
+  token: Token,
+  libraryAssets: LibraryAsset[]
+): Promise<HTMLImageElement | null> {
+  if (!token.frame.libraryAssetId) return null;
+  const asset = libraryAssets.find((a) => a.id === token.frame.libraryAssetId);
+  if (!asset) return null;
+  try {
+    return await loadAssetImage(asset.file);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Render a single token to an offscreen canvas.
  *
- * @param token   The token data to render
- * @param sizePx  Output size in pixels (width = height, image area only, without frame)
- * @returns       HTMLCanvasElement with the rendered token
+ * @param token          The token data to render
+ * @param sizePx         Output size in pixels (width = height, image area only, without frame)
+ * @param libraryAssets  Optional library assets array for resolving library frame overlays
+ * @returns              HTMLCanvasElement with the rendered token
  */
 export async function renderTokenToCanvas(
   token: Token,
-  sizePx: number
+  sizePx: number,
+  libraryAssets: LibraryAsset[] = []
 ): Promise<HTMLCanvasElement> {
   const image = await loadImage(token.processedSrc);
 
@@ -82,6 +101,12 @@ export async function renderTokenToCanvas(
 
   ctx.restore();
 
+  // 3. Draw library asset overlay (on top of everything)
+  const overlayImage = await loadLibraryOverlay(token, libraryAssets);
+  if (overlayImage) {
+    ctx.drawImage(overlayImage, 0, 0, totalSizePx, totalSizePx);
+  }
+
   return canvas;
 }
 
@@ -127,8 +152,9 @@ function drawShape(
  */
 export async function renderTokenToDataURL(
   token: Token,
-  sizePx: number
+  sizePx: number,
+  libraryAssets: LibraryAsset[] = []
 ): Promise<string> {
-  const canvas = await renderTokenToCanvas(token, sizePx);
+  const canvas = await renderTokenToCanvas(token, sizePx, libraryAssets);
   return canvas.toDataURL('image/png');
 }

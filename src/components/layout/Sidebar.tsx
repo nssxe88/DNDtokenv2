@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { ImagePlus, CircleUser, Layers, Printer } from 'lucide-react';
+import { ImagePlus, CircleUser, Layers, Printer, BookOpen } from 'lucide-react';
 import { UploadPanel } from '../panels/UploadPanel.tsx';
 import { TokenListPanel } from '../panels/TokenListPanel.tsx';
 import { OverlayPanel } from '../panels/OverlayPanel.tsx';
 import { PrintSettingsPanel } from '../panels/PrintSettingsPanel.tsx';
+import { AssetLibraryPanel } from '../panels/AssetLibraryPanel.tsx';
 
-type SidebarTab = 'upload' | 'tokens' | 'overlays' | 'print';
+type SidebarTab = 'upload' | 'tokens' | 'library' | 'overlays' | 'print';
 
 const TABS: { id: SidebarTab; label: string; icon: typeof ImagePlus }[] = [
   { id: 'upload', label: 'Upload', icon: ImagePlus },
   { id: 'tokens', label: 'Tokens', icon: CircleUser },
+  { id: 'library', label: 'Library', icon: BookOpen },
   { id: 'overlays', label: 'Overlays', icon: Layers },
   { id: 'print', label: 'Print', icon: Printer },
 ];
@@ -45,6 +47,7 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'upload' && <UploadPanel />}
         {activeTab === 'tokens' && <TokenListPanel />}
+        {activeTab === 'library' && <AssetLibraryPanel />}
         {activeTab === 'overlays' && <OverlayPanel />}
         {activeTab === 'print' && <PrintSettingsPanel />}
       </div>

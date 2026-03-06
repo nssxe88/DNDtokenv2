@@ -7,7 +7,7 @@
 
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import type { Token } from '../types/index.ts';
+import type { Token, LibraryAsset } from '../types/index.ts';
 import { renderTokenToCanvas } from './tokenRenderer.ts';
 
 export type PNGResolution = 256 | 512 | 1024 | 2048;
@@ -16,6 +16,7 @@ export interface PNGExportOptions {
   tokens: Token[];
   resolution: PNGResolution;
   transparent: boolean;
+  libraryAssets?: LibraryAsset[];
   onProgress?: (current: number, total: number) => void;
 }
 
@@ -69,6 +70,7 @@ export async function exportTokensAsZip({
   tokens,
   resolution,
   transparent,
+  libraryAssets = [],
   onProgress,
 }: PNGExportOptions): Promise<void> {
   const visibleTokens = tokens.filter((t) => t.visible);
@@ -86,7 +88,7 @@ export async function exportTokensAsZip({
     for (let copy = 0; copy < token.count; copy++) {
       onProgress?.(fileIndex + 1, getTotalCount(visibleTokens));
 
-      let canvas = await renderTokenToCanvas(token, resolution);
+      let canvas = await renderTokenToCanvas(token, resolution, libraryAssets);
 
       if (!transparent) {
         canvas = addWhiteBackground(canvas);
@@ -112,9 +114,10 @@ export async function exportTokensAsZip({
 export async function exportSingleTokenPNG(
   token: Token,
   resolution: PNGResolution,
-  transparent: boolean
+  transparent: boolean,
+  libraryAssets: LibraryAsset[] = []
 ): Promise<void> {
-  let canvas = await renderTokenToCanvas(token, resolution);
+  let canvas = await renderTokenToCanvas(token, resolution, libraryAssets);
 
   if (!transparent) {
     canvas = addWhiteBackground(canvas);

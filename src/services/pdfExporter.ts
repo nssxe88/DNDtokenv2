@@ -6,7 +6,7 @@
  */
 
 import { jsPDF } from 'jspdf';
-import type { Token, PrintSettings, PaperSize } from '../types/index.ts';
+import type { Token, PrintSettings, PaperSize, LibraryAsset } from '../types/index.ts';
 import { computeLayout } from './layoutEngine.ts';
 import type { LayoutTokenItem } from './layoutEngine.ts';
 import { renderTokenToCanvas } from './tokenRenderer.ts';
@@ -16,6 +16,7 @@ import { mmToPrintPx } from '../utils/units.ts';
 export interface PDFExportOptions {
   tokens: Token[];
   printSettings: PrintSettings;
+  libraryAssets?: LibraryAsset[];
   onProgress?: (current: number, total: number) => void;
 }
 
@@ -88,6 +89,7 @@ function drawCutMarks(
 export async function generatePDF({
   tokens,
   printSettings,
+  libraryAssets = [],
   onProgress,
 }: PDFExportOptions): Promise<void> {
   if (tokens.length === 0) {
@@ -153,24 +155,28 @@ export async function generatePDF({
 
     onProgress?.(i + 1, total);
 
-    // Render token at print DPI
-    const tokenInnerSizePx = mmToPrintPx(token.sizeMm);
-    const canvas = await renderTokenToCanvas(token, tokenInnerSizePx);
+    try {
+      // Render token at print DPI
+      const tokenInnerSizePx = mmToPrintPx(token.sizeMm);
+      const canvas = await renderTokenToCanvas(token, tokenInnerSizePx, libraryAssets);
 
-    // Position on page (margins + layout position)
-    const drawX = margins + pos.x;
-    const drawY = margins + pos.y;
+      // Position on page (margins + layout position)
+      const drawX = margins + pos.x;
+      const drawY = margins + pos.y;
 
-    // Set the correct page
-    pdf.setPage(pos.page + 1);
+      // Set the correct page
+      pdf.setPage(pos.page + 1);
 
-    // Add rendered token image to PDF
-    const dataUrl = canvas.toDataURL('image/png');
-    pdf.addImage(dataUrl, 'PNG', drawX, drawY, pos.w, pos.h);
+      // Add rendered token image to PDF
+      const dataUrl = canvas.toDataURL('image/png');
+      pdf.addImage(dataUrl, 'PNG', drawX, drawY, pos.w, pos.h);
 
-    // Draw cut marks if enabled
-    if (printSettings.cutMarks) {
-      drawCutMarks(pdf, drawX, drawY, pos.w, pos.h, token.shape);
+      // Draw cut marks if enabled
+      if (printSettings.cutMarks) {
+        drawCutMarks(pdf, drawX, drawY, pos.w, pos.h, token.shape);
+      }
+    } catch (error) {
+      console.error(`Failed to render token "${token.fileName}" (${token.id}):`, error);
     }
   }
 

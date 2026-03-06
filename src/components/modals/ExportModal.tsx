@@ -17,6 +17,7 @@ export function ExportModal() {
   const exportModalOpen = useStore((state) => state.exportModalOpen);
   const closeExportModal = useStore((state) => state.closeExportModal);
   const tokens = useStore((state) => state.tokens);
+  const libraryAssets = useStore((state) => state.libraryAssets);
 
   // Print settings from store
   const paperSize = useStore((state) => state.paperSize);
@@ -70,6 +71,7 @@ export function ExportModal() {
       await generatePDF({
         tokens,
         printSettings,
+        libraryAssets,
         onProgress: (current, total) => {
           setProgress({ current, total });
         },
@@ -102,6 +104,7 @@ export function ExportModal() {
         tokens,
         resolution: pngResolution,
         transparent: transparentBg,
+        libraryAssets,
         onProgress: (current, total) => {
           setProgress({ current, total });
         },
