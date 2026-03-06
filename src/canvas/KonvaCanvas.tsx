@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 import { Stage, Layer } from 'react-konva';
 import type Konva from 'konva';
 import { useStore } from '../store/index.ts';
@@ -7,6 +7,8 @@ import { TokenGroup } from './TokenGroup.tsx';
 import { TransformerWrapper } from './TransformerWrapper.tsx';
 import { pxToMm } from '../utils/units.ts';
 import { clamp } from '../utils/math.ts';
+import { usePrintLayout } from '../hooks/usePrintLayout.ts';
+import type { Token } from '../types/index.ts';
 
 interface KonvaCanvasProps {
   width: number;
@@ -34,6 +36,8 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
   const setPanOffset = useStore((s) => s.setPanOffset);
   const openCropModal = useStore((s) => s.openCropModal);
   const removeTokens = useStore((s) => s.removeTokens);
+
+  const printLayout = usePrintLayout();
 
   // Track shift key state
   useEffect(() => {
@@ -172,6 +176,26 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
   const isEditMode = mode === 'edit';
   const sortedTokens = [...tokens].sort((a, b) => a.zIndex - b.zIndex);
 
+  // In print-layout mode: create virtual token objects positioned by the layout engine
+  const printLayoutTokens = useMemo(() => {
+    if (isEditMode) return null;
+
+    return printLayout.items.map((item, idx) => {
+      // Create a virtual token with the layout-computed position
+      const virtualToken: Token = {
+        ...item.token,
+        // Override position with layout engine result
+        position: { x: item.x, y: item.y + item.page * (printLayout.paperHeight + 10) },
+        rotation: 0, // Reset rotation for print layout
+      };
+      return { token: virtualToken, key: `${item.token.id}-${item.page}-${item.copyIndex}-${idx}` };
+    });
+  }, [isEditMode, printLayout]);
+
+  // No-op handlers for print layout mode (read-only)
+  const noOpDragEnd = useCallback(() => {}, []);
+  const noOpTransformEnd = useCallback(() => {}, []);
+
   return (
     <Stage
       ref={stageRef}
@@ -181,21 +205,37 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
       onTap={handleStageClick}
       onWheel={handleWheel}
     >
-      <BackgroundLayer zoom={zoom} panOffset={panOffset} />
+      <BackgroundLayer
+        zoom={zoom}
+        panOffset={panOffset}
+        pageCount={isEditMode ? 1 : printLayout.pageCount}
+      />
 
       <Layer scaleX={zoom} scaleY={zoom} x={panOffset.x} y={panOffset.y}>
-        {sortedTokens.map((token) => (
-          <TokenGroup
-            key={token.id}
-            token={token}
-            isSelected={selectedTokenIds.includes(token.id)}
-            draggable={isEditMode}
-            onSelect={handleSelect}
-            onDragEnd={handleDragEnd}
-            onTransformEnd={handleTransformEnd}
-            onDblClick={handleDblClick}
-          />
-        ))}
+        {isEditMode
+          ? sortedTokens.map((token) => (
+              <TokenGroup
+                key={token.id}
+                token={token}
+                isSelected={selectedTokenIds.includes(token.id)}
+                draggable={true}
+                onSelect={handleSelect}
+                onDragEnd={handleDragEnd}
+                onTransformEnd={handleTransformEnd}
+                onDblClick={handleDblClick}
+              />
+            ))
+          : printLayoutTokens?.map(({ token, key }) => (
+              <TokenGroup
+                key={key}
+                token={token}
+                isSelected={false}
+                draggable={false}
+                onSelect={handleSelect}
+                onDragEnd={noOpDragEnd}
+                onTransformEnd={noOpTransformEnd}
+              />
+            ))}
       </Layer>
 
       <Layer scaleX={zoom} scaleY={zoom} x={panOffset.x} y={panOffset.y}>

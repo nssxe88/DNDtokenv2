@@ -5,6 +5,7 @@ import { DEFAULT_GRID_SIZE_MM } from '../utils/constants.ts';
 export interface EditorSlice extends EditorState {
   // Modal state
   cropModalTokenId: string | null;
+  exportModalOpen: boolean;
 
   setMode: (mode: EditorState['mode']) => void;
   selectToken: (id: string) => void;
@@ -17,10 +18,12 @@ export interface EditorSlice extends EditorState {
   toggleGrid: () => void;
   toggleSnapToGrid: () => void;
   toggleGuides: () => void;
-  toggleCutMarks: () => void;
+  toggleShowCutMarks: () => void;
   setGridSize: (sizeMm: number) => void;
   openCropModal: (tokenId: string) => void;
   closeCropModal: () => void;
+  openExportModal: () => void;
+  closeExportModal: () => void;
 }
 
 export const createEditorSlice: StateCreator<EditorSlice> = (set) => ({
@@ -34,6 +37,7 @@ export const createEditorSlice: StateCreator<EditorSlice> = (set) => ({
   showGuides: true,
   showCutMarks: false,
   cropModalTokenId: null,
+  exportModalOpen: false,
 
   setMode: (mode) => set({ mode }),
 
@@ -65,11 +69,15 @@ export const createEditorSlice: StateCreator<EditorSlice> = (set) => ({
 
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
 
-  toggleCutMarks: () => set((state) => ({ showCutMarks: !state.showCutMarks })),
+  toggleShowCutMarks: () => set((state) => ({ showCutMarks: !state.showCutMarks })),
 
   setGridSize: (sizeMm) => set({ gridSizeMm: sizeMm }),
 
   openCropModal: (tokenId) => set({ cropModalTokenId: tokenId }),
 
   closeCropModal: () => set({ cropModalTokenId: null }),
+
+  openExportModal: () => set({ exportModalOpen: true }),
+
+  closeExportModal: () => set({ exportModalOpen: false }),
 });
