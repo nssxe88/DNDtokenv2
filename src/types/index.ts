@@ -31,3 +31,11 @@ export type {
   LibraryAsset,
   LibraryManifest,
 } from './library.ts';
+
+export type {
+  GalleryCategory,
+  GalleryImage,
+  GalleryUploadRequest,
+  GalleryFilters,
+  GalleryPaginatedResponse,
+} from './gallery.ts';
