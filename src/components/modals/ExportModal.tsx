@@ -5,6 +5,8 @@ import { useStore } from '../../store/index.ts';
 import { generatePDF } from '../../services/pdfExporter.ts';
 import { exportTokensAsZip, type PNGResolution } from '../../services/pngExporter.ts';
 import type { PrintSettings } from '../../types/index.ts';
+import { AdSlot } from '../ads/AdSlot.tsx';
+import { AD_CONFIG } from '../ads/adConfig.ts';
 
 type TabType = 'pdf' | 'png';
 
@@ -334,6 +336,16 @@ export function ExportModal() {
             </div>
           )}
         </div>
+
+        {/* Ad banner */}
+        <AdSlot
+          slotId={AD_CONFIG.slots.export}
+          format="display"
+          layout="fixed"
+          width={728}
+          height={90}
+          className="flex justify-center px-6 py-2"
+        />
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-700">

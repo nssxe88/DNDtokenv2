@@ -35,34 +35,15 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
   const setZoom = useStore((s) => s.setZoom);
   const setPanOffset = useStore((s) => s.setPanOffset);
   const openCropModal = useStore((s) => s.openCropModal);
-  const removeTokens = useStore((s) => s.removeTokens);
+  const pushHistory = useStore((s) => s.pushHistory);
 
   const printLayout = usePrintLayout();
 
-  // Track shift key state
+  // Track shift key state for multi-select
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Shift') shiftHeld.current = true;
-
-      // Delete selected tokens
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedTokenIds.length > 0) {
-        // Don't delete if user is typing in an input
-        if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
-        removeTokens(selectedTokenIds);
-      }
-
-      // Escape to deselect
-      if (e.key === 'Escape') {
-        clearSelection();
-      }
-
-      // Select all with Ctrl/Cmd+A
-      if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
-        e.preventDefault();
-        useStore.getState().selectTokens(tokens.map((t) => t.id));
-      }
     };
-
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Shift') shiftHeld.current = false;
     };
@@ -73,7 +54,7 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [selectedTokenIds, clearSelection, removeTokens, tokens]);
+  }, []);
 
   const handleStageClick = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -113,9 +94,10 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
         mmY = Math.round(mmY / gridSizeMm) * gridSizeMm;
       }
 
+      pushHistory();
       updateTokenPosition(id, mmX, mmY);
     },
-    [snapToGrid, gridSizeMm, updateTokenPosition]
+    [snapToGrid, gridSizeMm, updateTokenPosition, pushHistory]
   );
 
   const handleTransformEnd = useCallback(
@@ -132,13 +114,14 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
 
       const newSizeMm = token.sizeMm * Math.max(scaleX, scaleY);
 
+      pushHistory();
       updateToken(id, {
         sizeMm: Math.round(newSizeMm * 10) / 10,
         rotation,
         sizePreset: null,
       });
     },
-    [tokens, updateToken]
+    [tokens, updateToken, pushHistory]
   );
 
   const handleWheel = useCallback(

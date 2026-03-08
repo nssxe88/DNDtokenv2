@@ -6,6 +6,8 @@ import { OverlayPanel } from '../panels/OverlayPanel.tsx';
 import { PrintSettingsPanel } from '../panels/PrintSettingsPanel.tsx';
 import { AssetLibraryPanel } from '../panels/AssetLibraryPanel.tsx';
 import { GalleryPanel } from '../panels/GalleryPanel.tsx';
+import { AdSlot } from '../ads/AdSlot.tsx';
+import { AD_CONFIG } from '../ads/adConfig.ts';
 
 type SidebarTab = 'upload' | 'tokens' | 'library' | 'gallery' | 'overlays' | 'print';
 
@@ -54,6 +56,16 @@ export function Sidebar() {
         {activeTab === 'overlays' && <OverlayPanel />}
         {activeTab === 'print' && <PrintSettingsPanel />}
       </div>
+
+      {/* Sidebar ad slot */}
+      <AdSlot
+        slotId={AD_CONFIG.slots.sidebar}
+        format="display"
+        layout="fixed"
+        width={300}
+        height={250}
+        className="flex-shrink-0 border-t border-slate-700 p-2"
+      />
     </aside>
   );
 }
