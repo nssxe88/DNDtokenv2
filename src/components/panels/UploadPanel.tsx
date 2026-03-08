@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
 import { Upload, ImagePlus } from 'lucide-react';
 import { useStore } from '../../store/index.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 export function UploadPanel() {
+  const { t } = useTranslation();
   const addToken = useStore((s) => s.addToken);
   const openCropModal = useStore((s) => s.openCropModal);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -10,23 +12,24 @@ export function UploadPanel() {
 
   const processFiles = useCallback(
     (files: FileList | File[]) => {
-      const fileArray = Array.from(files);
-      let lastTokenId: string | null = null;
-      for (const file of fileArray) {
-        if (!file.type.startsWith('image/')) continue;
+      const imageFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+      if (imageFiles.length === 0) return;
 
+      let lastTokenId: string | null = null;
+      let loadedCount = 0;
+      const totalCount = imageFiles.length;
+
+      for (const file of imageFiles) {
         const reader = new FileReader();
         reader.onload = (e) => {
           const src = e.target?.result as string;
           if (src) {
             const token = addToken(file, src);
             lastTokenId = token.id;
-            // Open crop modal for the last uploaded image
-            if (fileArray.indexOf(file) === fileArray.length - 1) {
-              setTimeout(() => {
-                if (lastTokenId) openCropModal(lastTokenId);
-              }, 100);
-            }
+          }
+          loadedCount++;
+          if (loadedCount === totalCount && lastTokenId) {
+            openCropModal(lastTokenId);
           }
         };
         reader.readAsDataURL(file);
@@ -64,7 +67,7 @@ export function UploadPanel() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-slate-200">Upload Images</h3>
+      <h3 className="text-sm font-semibold text-slate-200">{t('upload.title')}</h3>
 
       {/* Drop zone */}
       <div
@@ -87,9 +90,9 @@ export function UploadPanel() {
         </div>
         <div className="text-center">
           <p className="text-sm text-slate-300">
-            {isDragging ? 'Drop images here' : 'Drag & drop images'}
+            {isDragging ? t('upload.dropHere') : t('upload.dragAndDrop')}
           </p>
-          <p className="mt-1 text-xs text-slate-500">or click to browse</p>
+          <p className="mt-1 text-xs text-slate-500">{t('upload.orClickToBrowse')}</p>
         </div>
       </div>
 
@@ -103,7 +106,7 @@ export function UploadPanel() {
       />
 
       <p className="text-xs text-slate-500">
-        Supports PNG, JPG, WebP. Multiple files allowed.
+        {t('upload.supportedFormats')}
       </p>
     </div>
   );

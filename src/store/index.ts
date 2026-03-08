@@ -7,6 +7,7 @@ import { createGallerySlice, type GallerySlice } from './gallerySlice.ts';
 import { createHistorySlice, type HistorySlice } from './historySlice.ts';
 import { createProjectSlice, type ProjectSlice } from './projectSlice.ts';
 import { createConsentSlice, type ConsentSlice } from './consentSlice.ts';
+import { createLanguageSlice, type LanguageSlice } from './languageSlice.ts';
 
 export type AppStore = TokenSlice &
   EditorSlice &
@@ -15,7 +16,8 @@ export type AppStore = TokenSlice &
   GallerySlice &
   HistorySlice &
   ProjectSlice &
-  ConsentSlice;
+  ConsentSlice &
+  LanguageSlice;
 
 export const useStore = create<AppStore>()((...a) => ({
   ...createTokenSlice(...a),
@@ -26,4 +28,5 @@ export const useStore = create<AppStore>()((...a) => ({
   ...createHistorySlice(...a),
   ...createProjectSlice(...a),
   ...createConsentSlice(...a),
+  ...createLanguageSlice(...a),
 }));

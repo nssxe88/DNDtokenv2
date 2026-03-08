@@ -7,6 +7,7 @@ import { exportTokensAsZip, type PNGResolution } from '../../services/pngExporte
 import type { PrintSettings } from '../../types/index.ts';
 import { AdSlot } from '../ads/AdSlot.tsx';
 import { AD_CONFIG } from '../ads/adConfig.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 type TabType = 'pdf' | 'png';
 
@@ -16,6 +17,7 @@ interface ExportProgress {
 }
 
 export function ExportModal() {
+  const { t } = useTranslation();
   const exportModalOpen = useStore((state) => state.exportModalOpen);
   const closeExportModal = useStore((state) => state.closeExportModal);
   const tokens = useStore((state) => state.tokens);
@@ -55,14 +57,14 @@ export function ExportModal() {
     bleed,
   };
 
-  const visibleTokenCount = tokens.filter((t) => t.visible).length;
+  const visibleTokenCount = tokens.filter((tk) => tk.visible).length;
   const totalTokenCopies = tokens
-    .filter((t) => t.visible)
-    .reduce((sum, t) => sum + t.count, 0);
+    .filter((tk) => tk.visible)
+    .reduce((sum, tk) => sum + tk.count, 0);
 
   const handlePDFExport = async () => {
     if (visibleTokenCount === 0) {
-      toast.error('Nincsenek látható tokenek az exportáláshoz');
+      toast.error(t('export.noVisibleTokens'));
       return;
     }
 
@@ -79,12 +81,12 @@ export function ExportModal() {
         },
       });
 
-      toast.success('PDF sikeresen létrehozva!');
+      toast.success(t('export.pdfSuccess'));
       closeExportModal();
     } catch (error) {
       console.error('PDF export error:', error);
       toast.error(
-        error instanceof Error ? error.message : 'Hiba történt a PDF létrehozása során'
+        error instanceof Error ? error.message : t('export.pdfError')
       );
     } finally {
       setExporting(false);
@@ -94,7 +96,7 @@ export function ExportModal() {
 
   const handlePNGExport = async () => {
     if (visibleTokenCount === 0) {
-      toast.error('Nincsenek látható tokenek az exportáláshoz');
+      toast.error(t('export.noVisibleTokens'));
       return;
     }
 
@@ -112,12 +114,12 @@ export function ExportModal() {
         },
       });
 
-      toast.success('ZIP fájl sikeresen letöltve!');
+      toast.success(t('export.zipSuccess'));
       closeExportModal();
     } catch (error) {
       console.error('PNG export error:', error);
       toast.error(
-        error instanceof Error ? error.message : 'Hiba történt a PNG exportálás során'
+        error instanceof Error ? error.message : t('export.pngError')
       );
     } finally {
       setExporting(false);
@@ -127,7 +129,7 @@ export function ExportModal() {
 
   const getPaperSizeLabel = (): string => {
     if (paperSize === 'custom' && customPaperSize) {
-      return `Egyedi (${customPaperSize.width} x ${customPaperSize.height} mm)`;
+      return t('export.customPaper', { width: customPaperSize.width, height: customPaperSize.height });
     }
     return paperSize.toUpperCase();
   };
@@ -137,12 +139,12 @@ export function ExportModal() {
       <div className="bg-slate-800 rounded-lg shadow-xl max-w-lg w-full mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <h2 className="text-xl font-semibold text-slate-200">Exportálás</h2>
+          <h2 className="text-xl font-semibold text-slate-200">{t('export.title')}</h2>
           <button
             onClick={closeExportModal}
             disabled={exporting}
             className="text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Bezárás"
+            aria-label={t('export.close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -161,7 +163,7 @@ export function ExportModal() {
           >
             <div className="flex items-center justify-center gap-2">
               <FileText className="w-4 h-4" />
-              <span>PDF Nyomtatás</span>
+              <span>{t('export.pdfTab')}</span>
             </div>
           </button>
           <button
@@ -175,7 +177,7 @@ export function ExportModal() {
           >
             <div className="flex items-center justify-center gap-2">
               <Image className="w-4 h-4" />
-              <span>PNG Képek</span>
+              <span>{t('export.pngTab')}</span>
             </div>
           </button>
         </div>
@@ -187,21 +189,21 @@ export function ExportModal() {
               {/* Print Settings Summary */}
               <div className="bg-slate-700 rounded-md p-4 space-y-2">
                 <h3 className="text-sm font-medium text-slate-300 mb-2">
-                  Nyomtatási beállítások
+                  {t('export.printSettings')}
                 </h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-slate-400">Papír méret:</div>
+                  <div className="text-slate-400">{t('export.paperSize')}</div>
                   <div className="text-slate-200">{getPaperSizeLabel()}</div>
 
-                  <div className="text-slate-400">Tájolás:</div>
+                  <div className="text-slate-400">{t('export.orientation')}</div>
                   <div className="text-slate-200">
-                    {orientation === 'portrait' ? 'Álló' : 'Fekvő'}
+                    {orientation === 'portrait' ? t('export.portrait') : t('export.landscape')}
                   </div>
 
-                  <div className="text-slate-400">Margók:</div>
+                  <div className="text-slate-400">{t('export.margins')}</div>
                   <div className="text-slate-200">{margins} mm</div>
 
-                  <div className="text-slate-400">Távolság:</div>
+                  <div className="text-slate-400">{t('export.spacing')}</div>
                   <div className="text-slate-200">{spacing} mm</div>
                 </div>
               </div>
@@ -216,14 +218,14 @@ export function ExportModal() {
                   className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-sm text-slate-300">
-                  Vágójelek megjelenítése
+                  {t('export.showCutMarks')}
                 </span>
               </label>
 
               {/* Bleed Input */}
               <div>
                 <label className="block text-sm text-slate-300 mb-2">
-                  Margó túlnyúlás (bleed)
+                  {t('export.bleedMargin')}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -242,7 +244,7 @@ export function ExportModal() {
 
               {/* Token Count Info */}
               <div className="text-sm text-slate-400">
-                Tokenek száma: {visibleTokenCount} ({totalTokenCopies} példány)
+                {t('export.tokenCount', { count: visibleTokenCount, copies: totalTokenCopies })}
               </div>
 
               {/* Progress */}
@@ -251,7 +253,7 @@ export function ExportModal() {
                   <div className="flex items-center gap-2 text-sm text-slate-300 mb-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>
-                      Token renderelése: {progress.current} / {progress.total}
+                      {t('export.renderingToken', { current: progress.current, total: progress.total })}
                     </span>
                   </div>
                   <div className="w-full bg-slate-600 rounded-full h-2">
@@ -270,7 +272,7 @@ export function ExportModal() {
               {/* Resolution Selector */}
               <div>
                 <label className="block text-sm text-slate-300 mb-2">
-                  Felbontás (px)
+                  {t('export.resolution')}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {([256, 512, 1024, 2048] as const).map((res) => (
@@ -300,18 +302,18 @@ export function ExportModal() {
                   className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-sm text-slate-300">
-                  Átlátszó háttér
+                  {t('export.transparentBg')}
                 </span>
               </label>
 
               {/* Token Count Info */}
               <div className="text-sm text-slate-400">
-                Tokenek száma: {visibleTokenCount} ({totalTokenCopies} fájl)
+                {t('export.tokenCountPng', { count: visibleTokenCount, copies: totalTokenCopies })}
               </div>
 
-              {/* File Size Estimate (PNG compression ~80-90% reduction) */}
+              {/* File Size Estimate */}
               <div className="bg-slate-700 rounded-md p-3 text-sm text-slate-400">
-                Becsült fájlméret: ~{Math.max(1, Math.ceil((totalTokenCopies * pngResolution * pngResolution) / 1024 / 1024 / 2))} MB
+                {t('export.estimatedSize', { size: Math.max(1, Math.ceil((totalTokenCopies * pngResolution * pngResolution) / 1024 / 1024 / 2)) })}
               </div>
 
               {/* Progress */}
@@ -320,7 +322,7 @@ export function ExportModal() {
                   <div className="flex items-center gap-2 text-sm text-slate-300 mb-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>
-                      Token exportálása: {progress.current} / {progress.total}
+                      {t('export.exportingToken', { current: progress.current, total: progress.total })}
                     </span>
                   </div>
                   <div className="w-full bg-slate-600 rounded-full h-2">
@@ -354,7 +356,7 @@ export function ExportModal() {
             disabled={exporting}
             className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Mégse
+            {t('export.cancel')}
           </button>
           <button
             onClick={activeTab === 'pdf' ? handlePDFExport : handlePNGExport}
@@ -364,13 +366,13 @@ export function ExportModal() {
             {exporting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Exportálás...</span>
+                <span>{t('export.exporting')}</span>
               </>
             ) : (
               <>
                 <Download className="w-4 h-4" />
                 <span>
-                  {activeTab === 'pdf' ? 'PDF Generálás' : 'ZIP Letöltés'}
+                  {activeTab === 'pdf' ? t('export.generatePdf') : t('export.downloadZip')}
                 </span>
               </>
             )}

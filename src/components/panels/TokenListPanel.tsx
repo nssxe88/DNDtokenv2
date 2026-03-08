@@ -1,7 +1,8 @@
 import { Trash2, Copy, Eye, EyeOff, Crop, Circle, Square, Hexagon } from 'lucide-react';
 import { useStore } from '../../store/index.ts';
 import type { DnDSizePreset, TokenShape } from '../../types/index.ts';
-import { DND_SIZE_PRESETS, DND_SIZE_LABELS } from '../../utils/constants.ts';
+import { DND_SIZE_PRESETS } from '../../utils/constants.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 const PRESETS = Object.entries(DND_SIZE_PRESETS) as [DnDSizePreset, number][];
 
@@ -11,13 +12,14 @@ const SHAPE_ICONS: Record<TokenShape, typeof Circle> = {
   hexagon: Hexagon,
 };
 
-const SHAPE_OPTIONS: { value: TokenShape; label: string }[] = [
-  { value: 'circle', label: 'Circle' },
-  { value: 'square', label: 'Square' },
-  { value: 'hexagon', label: 'Hexagon' },
-];
+const SHAPE_KEYS: Record<TokenShape, string> = {
+  circle: 'shapes.circle',
+  square: 'shapes.square',
+  hexagon: 'shapes.hexagon',
+};
 
 export function TokenListPanel() {
+  const { t } = useTranslation();
   const tokens = useStore((s) => s.tokens);
   const selectedTokenIds = useStore((s) => s.selectedTokenIds);
   const selectToken = useStore((s) => s.selectToken);
@@ -33,7 +35,7 @@ export function TokenListPanel() {
   if (tokens.length === 0) {
     return (
       <div className="py-8 text-center text-sm text-slate-500">
-        No tokens yet. Upload images to get started.
+        {t('tokenList.noTokens')}
       </div>
     );
   }
@@ -42,7 +44,7 @@ export function TokenListPanel() {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-200">
-          Tokens ({tokens.length})
+          {t('tokenList.tokensCount', { count: tokens.length })}
         </h3>
         <div className="flex gap-1">
           {selectedTokenIds.length > 1 && (
@@ -50,14 +52,14 @@ export function TokenListPanel() {
               onClick={() => removeTokens(selectedTokenIds)}
               className="rounded px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-400/10"
             >
-              Delete Selected ({selectedTokenIds.length})
+              {t('tokenList.deleteSelected', { count: selectedTokenIds.length })}
             </button>
           )}
           <button
             onClick={clearAllTokens}
             className="rounded px-2 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-700 hover:text-slate-300"
           >
-            Clear All
+            {t('tokenList.clearAll')}
           </button>
         </div>
       </div>
@@ -94,7 +96,7 @@ export function TokenListPanel() {
                   {token.fileName}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {token.sizeMm}mm &middot; {token.shape} &middot; x{token.count}
+                  {token.sizeMm}mm &middot; {t(`shapes.${token.shape}`)} &middot; x{token.count}
                 </p>
               </div>
 
@@ -106,7 +108,7 @@ export function TokenListPanel() {
                     openCropModal(token.id);
                   }}
                   className="rounded p-1 text-slate-400 hover:text-primary-400"
-                  title="Position Image"
+                  title={t('tokenList.positionImage')}
                 >
                   <Crop size={14} />
                 </button>
@@ -116,7 +118,7 @@ export function TokenListPanel() {
                     updateToken(token.id, { visible: !token.visible });
                   }}
                   className="rounded p-1 text-slate-400 hover:text-slate-200"
-                  title={token.visible ? 'Hide' : 'Show'}
+                  title={token.visible ? t('tokenList.hide') : t('tokenList.show')}
                 >
                   {token.visible ? <Eye size={14} /> : <EyeOff size={14} />}
                 </button>
@@ -126,7 +128,7 @@ export function TokenListPanel() {
                     duplicateToken(token.id);
                   }}
                   className="rounded p-1 text-slate-400 hover:text-slate-200"
-                  title="Duplicate"
+                  title={t('tokenList.duplicate')}
                 >
                   <Copy size={14} />
                 </button>
@@ -136,7 +138,7 @@ export function TokenListPanel() {
                     removeToken(token.id);
                   }}
                   className="rounded p-1 text-slate-400 hover:text-red-400"
-                  title="Delete"
+                  title={t('tokenList.delete')}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -148,25 +150,25 @@ export function TokenListPanel() {
               <div className="mt-3 space-y-3 border-t border-slate-600 pt-3">
                 {/* Shape selector */}
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">Shape</label>
+                  <label className="mb-1 block text-xs text-slate-400">{t('tokenList.shape')}</label>
                   <div className="flex rounded-lg bg-slate-700 p-0.5">
-                    {SHAPE_OPTIONS.map((opt) => {
-                      const Icon = SHAPE_ICONS[opt.value];
+                    {(['circle', 'square', 'hexagon'] as TokenShape[]).map((shape) => {
+                      const Icon = SHAPE_ICONS[shape];
                       return (
                         <button
-                          key={opt.value}
+                          key={shape}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setTokenShape(token.id, opt.value);
+                            setTokenShape(token.id, shape);
                           }}
                           className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs transition-colors ${
-                            token.shape === opt.value
+                            token.shape === shape
                               ? 'bg-primary-600 text-white'
                               : 'text-slate-300 hover:text-white'
                           }`}
                         >
                           <Icon size={12} />
-                          {opt.label}
+                          {t(SHAPE_KEYS[shape])}
                         </button>
                       );
                     })}
@@ -175,7 +177,7 @@ export function TokenListPanel() {
 
                 {/* Size preset */}
                 <div>
-                  <label className="mb-1 block text-xs text-slate-400">Size Preset</label>
+                  <label className="mb-1 block text-xs text-slate-400">{t('tokenList.sizePreset')}</label>
                   <select
                     value={token.sizePreset ?? 'custom'}
                     onChange={(e) => {
@@ -188,11 +190,11 @@ export function TokenListPanel() {
                   >
                     {PRESETS.map(([key]) => (
                       <option key={key} value={key}>
-                        {DND_SIZE_LABELS[key]}
+                        {t(`sizes.${key}`)}
                       </option>
                     ))}
                     {token.sizePreset === null && (
-                      <option value="custom">Custom ({token.sizeMm}mm)</option>
+                      <option value="custom">{t('tokenList.customSize', { size: token.sizeMm })}</option>
                     )}
                   </select>
                 </div>
@@ -200,7 +202,7 @@ export function TokenListPanel() {
                 {/* Frame */}
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <label className="text-xs text-slate-400">Frame</label>
+                    <label className="text-xs text-slate-400">{t('tokenList.frame')}</label>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -214,7 +216,7 @@ export function TokenListPanel() {
                           : 'text-slate-500 hover:text-slate-300'
                       }`}
                     >
-                      {token.frame.enabled ? 'ON' : 'OFF'}
+                      {token.frame.enabled ? t('tokenList.on') : t('tokenList.off')}
                     </button>
                   </div>
                   {token.frame.enabled && (
@@ -233,7 +235,7 @@ export function TokenListPanel() {
                         />
                         <div className="flex-1">
                           <label className="flex items-center justify-between text-xs text-slate-500">
-                            <span>Thickness</span>
+                            <span>{t('tokenList.thickness')}</span>
                             <span>{token.frame.thicknessMm}mm</span>
                           </label>
                           <input
@@ -262,7 +264,7 @@ export function TokenListPanel() {
                 {/* Count */}
                 <div>
                   <label className="mb-1 flex items-center justify-between text-xs text-slate-400">
-                    <span>Print Count</span>
+                    <span>{t('tokenList.printCount')}</span>
                     <span>x{token.count}</span>
                   </label>
                   <input

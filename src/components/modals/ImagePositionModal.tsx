@@ -1,21 +1,59 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Stage, Layer, Image as KonvaImage, Rect, Circle, Line } from 'react-konva';
 import type Konva from 'konva';
 import { X, RotateCcw } from 'lucide-react';
 import { useStore } from '../../store/index.ts';
 import { useImageLoader } from '../../hooks/useImageLoader.ts';
 import type { ImageCropTransform, TokenShape } from '../../types/index.ts';
-import { drawShapePath } from '../../utils/shapes.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 const PREVIEW_SIZE = 320;
 
-function autoFitImage(imageWidth: number, imageHeight: number, tokenSize: number): ImageCropTransform {
-  const scale = Math.max(tokenSize / imageWidth, tokenSize / imageHeight);
+/** Local crop state used inside the preview (absolute pixel values at PREVIEW_SIZE). */
+interface PreviewCrop {
+  offsetX: number;
+  offsetY: number;
+  scale: number;
+  rotation: number;
+}
+
+function autoFitPreview(imageWidth: number, imageHeight: number): PreviewCrop {
+  const scale = Math.max(PREVIEW_SIZE / imageWidth, PREVIEW_SIZE / imageHeight);
+  return { offsetX: 0, offsetY: 0, scale, rotation: 0 };
+}
+
+/**
+ * Convert stored (normalized) crop to preview-space crop.
+ * Stored offsets are fractions of token size; scale is relative (1 = auto-fit).
+ */
+function storedCropToPreview(
+  stored: ImageCropTransform,
+  imageWidth: number,
+  imageHeight: number
+): PreviewCrop {
+  const baseScale = Math.max(PREVIEW_SIZE / imageWidth, PREVIEW_SIZE / imageHeight);
   return {
-    offsetX: 0,
-    offsetY: 0,
-    scale,
-    rotation: 0,
+    offsetX: stored.offsetX * PREVIEW_SIZE,
+    offsetY: stored.offsetY * PREVIEW_SIZE,
+    scale: stored.scale * baseScale,
+    rotation: stored.rotation,
+  };
+}
+
+/**
+ * Convert preview-space crop back to normalized stored format.
+ */
+function previewCropToStored(
+  preview: PreviewCrop,
+  imageWidth: number,
+  imageHeight: number
+): ImageCropTransform {
+  const baseScale = Math.max(PREVIEW_SIZE / imageWidth, PREVIEW_SIZE / imageHeight);
+  return {
+    offsetX: preview.offsetX / PREVIEW_SIZE,
+    offsetY: preview.offsetY / PREVIEW_SIZE,
+    scale: preview.scale / baseScale,
+    rotation: preview.rotation,
   };
 }
 
@@ -24,24 +62,40 @@ interface DimOverlayProps {
   size: number;
 }
 
-/** Semi-transparent overlay outside the token shape for visual clarity */
+/** Semi-transparent overlay outside the token shape for visual clarity. */
 function DimOverlay({ shape, size }: DimOverlayProps) {
   const sceneFunc = useCallback(
     (context: Konva.Context, konvaShape: Konva.Shape) => {
       const ctx = context._context;
-      // Fill entire canvas with semi-transparent dark
       ctx.save();
+
+      ctx.beginPath();
+      ctx.rect(0, 0, size, size);
+
+      const half = size / 2;
+      switch (shape) {
+        case 'circle':
+          ctx.arc(half, half, half, 0, Math.PI * 2);
+          break;
+        case 'square':
+          ctx.rect(0.5, 0.5, size - 1, size - 1);
+          break;
+        case 'hexagon':
+          for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i - Math.PI / 2;
+            const hx = half + half * Math.cos(angle);
+            const hy = half + half * Math.sin(angle);
+            if (i === 0) ctx.moveTo(hx, hy);
+            else ctx.lineTo(hx, hy);
+          }
+          ctx.closePath();
+          break;
+      }
+
       ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      ctx.fillRect(0, 0, size, size);
+      ctx.fill('evenodd');
 
-      // Cut out the token shape using composite operation
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = 'white';
-
-      drawShapePath(ctx, shape, size);
-      ctx.fill();
       ctx.restore();
-
       konvaShape.fillEnabled(false);
       konvaShape.strokeEnabled(false);
     },
@@ -106,15 +160,16 @@ function ShapeOutline({ shape, size }: DimOverlayProps) {
 }
 
 export function ImagePositionModal() {
+  const { t } = useTranslation();
   const cropModalTokenId = useStore((s) => s.cropModalTokenId);
   const closeCropModal = useStore((s) => s.closeCropModal);
   const tokens = useStore((s) => s.tokens);
   const updateTokenImageCrop = useStore((s) => s.updateTokenImageCrop);
 
-  const token = tokens.find((t) => t.id === cropModalTokenId);
+  const token = tokens.find((tk) => tk.id === cropModalTokenId);
   const image = useImageLoader(token?.originalSrc ?? null);
 
-  const [localCrop, setLocalCrop] = useState<ImageCropTransform>({
+  const [localCrop, setLocalCrop] = useState<PreviewCrop>({
     offsetX: 0,
     offsetY: 0,
     scale: 1,
@@ -123,19 +178,16 @@ export function ImagePositionModal() {
 
   const imageRef = useRef<Konva.Image>(null);
 
-  // Initialize crop from token when modal opens
-  useEffect(() => {
-    if (token && image) {
-      if (token.imageCrop.scale === 1 && token.imageCrop.offsetX === 0 && token.imageCrop.offsetY === 0) {
-        // Auto-fit for new tokens
-        const fit = autoFitImage(image.width, image.height, PREVIEW_SIZE);
-        setLocalCrop(fit);
-      } else {
-        // Use existing crop, scaled to preview size
-        setLocalCrop({ ...token.imageCrop });
-      }
+  const [prevInitKey, setPrevInitKey] = useState<string | null>(null);
+  const initKey = token && image ? `${token.id}:${image.src}` : null;
+  if (initKey && initKey !== prevInitKey && token && image) {
+    setPrevInitKey(initKey);
+    if (token.imageCrop.scale === 1 && token.imageCrop.offsetX === 0 && token.imageCrop.offsetY === 0) {
+      setLocalCrop(autoFitPreview(image.width, image.height));
+    } else {
+      setLocalCrop(storedCropToPreview(token.imageCrop, image.width, image.height));
     }
-  }, [token, image]);
+  }
 
   if (!cropModalTokenId || !token) return null;
 
@@ -171,21 +223,13 @@ export function ImagePositionModal() {
 
   const handleReset = () => {
     if (image) {
-      setLocalCrop(autoFitImage(image.width, image.height, PREVIEW_SIZE));
+      setLocalCrop(autoFitPreview(image.width, image.height));
     }
   };
 
   const handleApply = () => {
-    // Convert preview-space crop back to token-relative values
     if (image) {
-      const tokenSizePx = PREVIEW_SIZE;
-      const baseScale = Math.max(tokenSizePx / image.width, tokenSizePx / image.height);
-      updateTokenImageCrop(token.id, {
-        offsetX: localCrop.offsetX,
-        offsetY: localCrop.offsetY,
-        scale: localCrop.scale / baseScale,
-        rotation: localCrop.rotation,
-      });
+      updateTokenImageCrop(token.id, previewCropToStored(localCrop, image.width, image.height));
     }
     closeCropModal();
   };
@@ -204,7 +248,7 @@ export function ImagePositionModal() {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-700 px-6 py-4">
           <h2 className="text-sm font-semibold text-slate-200">
-            Position Image Within Token
+            {t('imagePosition.title')}
           </h2>
           <button
             onClick={handleCancel}
@@ -252,7 +296,7 @@ export function ImagePositionModal() {
 
         {/* Zoom slider + Reset */}
         <div className="flex items-center gap-4 px-6 pb-2">
-          <span className="text-xs text-slate-400">Zoom:</span>
+          <span className="text-xs text-slate-400">{t('imagePosition.zoom')}</span>
           <input
             type="range"
             min={10}
@@ -274,12 +318,12 @@ export function ImagePositionModal() {
             className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
           >
             <RotateCcw size={14} />
-            Reset
+            {t('imagePosition.reset')}
           </button>
         </div>
 
         <p className="px-6 pb-4 text-xs text-slate-500">
-          Drag image to reposition. Scroll to zoom.
+          {t('imagePosition.instructions')}
         </p>
 
         {/* Actions */}
@@ -288,13 +332,13 @@ export function ImagePositionModal() {
             onClick={handleCancel}
             className="rounded-lg px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700"
           >
-            Cancel
+            {t('imagePosition.cancel')}
           </button>
           <button
             onClick={handleApply}
             className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
           >
-            Apply
+            {t('imagePosition.apply')}
           </button>
         </div>
       </div>

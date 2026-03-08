@@ -2,20 +2,26 @@ import { useEffect, useState, useCallback } from 'react';
 import { Search, Upload, ChevronLeft, ChevronRight, Loader2, ImageOff } from 'lucide-react';
 import { useStore } from '../../store/index.ts';
 import type { GalleryCategory, GalleryImage } from '../../types/index.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
-const CATEGORIES: { id: GalleryCategory | 'all'; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'creature', label: 'Creatures' },
-  { id: 'humanoid', label: 'Humanoids' },
-  { id: 'undead', label: 'Undead' },
-  { id: 'environment', label: 'Environment' },
-  { id: 'item', label: 'Items' },
-  { id: 'vehicle', label: 'Vehicles' },
-  { id: 'effect', label: 'Effects' },
-  { id: 'other', label: 'Other' },
+const CATEGORY_IDS: (GalleryCategory | 'all')[] = [
+  'all', 'creature', 'humanoid', 'undead', 'environment', 'item', 'vehicle', 'effect', 'other',
 ];
 
+const CATEGORY_KEYS: Record<string, string> = {
+  all: 'galleryCategories.all',
+  creature: 'galleryCategories.creatures',
+  humanoid: 'galleryCategories.humanoids',
+  undead: 'galleryCategories.undead',
+  environment: 'galleryCategories.environment',
+  item: 'galleryCategories.items',
+  vehicle: 'galleryCategories.vehicles',
+  effect: 'galleryCategories.effects',
+  other: 'galleryCategories.other',
+};
+
 export function GalleryPanel() {
+  const { t } = useTranslation();
   const {
     galleryImages,
     galleryLoading,
@@ -71,7 +77,7 @@ export function GalleryPanel() {
             tab === 'browse' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Browse Gallery
+          {t('gallery.browseGallery')}
         </button>
         <button
           onClick={() => setTab('my-uploads')}
@@ -79,7 +85,7 @@ export function GalleryPanel() {
             tab === 'my-uploads' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          My Uploads
+          {t('gallery.myUploads')}
         </button>
       </div>
 
@@ -89,7 +95,7 @@ export function GalleryPanel() {
         className="flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-500"
       >
         <Upload size={16} />
-        Upload to Gallery
+        {t('gallery.uploadToGallery')}
       </button>
 
       {tab === 'browse' ? (
@@ -154,6 +160,8 @@ function BrowseView({
   onPageChange: (p: number) => void;
   onUseImage: (img: GalleryImage) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <>
       {/* Search */}
@@ -165,7 +173,7 @@ function BrowseView({
             value={searchInput}
             onChange={(e) => onSearchInput(e.target.value)}
             onKeyDown={onSearchKeyDown}
-            placeholder="Search images..."
+            placeholder={t('gallery.searchPlaceholder')}
             className="w-full rounded-lg bg-slate-700 py-1.5 pl-8 pr-3 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
           />
         </div>
@@ -173,37 +181,37 @@ function BrowseView({
           onClick={onSearch}
           className="rounded-lg bg-slate-700 px-3 text-sm text-slate-300 hover:bg-slate-600"
         >
-          Go
+          {t('gallery.go')}
         </button>
       </div>
 
       {/* Category filter */}
       <div className="flex flex-wrap gap-1">
-        {CATEGORIES.map((cat) => (
+        {CATEGORY_IDS.map((catId) => (
           <button
-            key={cat.id}
-            onClick={() => onCategoryChange(cat.id === 'all' ? null : cat.id)}
+            key={catId}
+            onClick={() => onCategoryChange(catId === 'all' ? null : catId)}
             className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
-              (cat.id === 'all' && !activeCategory) || activeCategory === cat.id
+              (catId === 'all' && !activeCategory) || activeCategory === catId
                 ? 'bg-primary-600 text-white'
                 : 'bg-slate-700 text-slate-400 hover:text-slate-200'
             }`}
           >
-            {cat.label}
+            {t(CATEGORY_KEYS[catId])}
           </button>
         ))}
       </div>
 
       {/* Sort */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-400">Sort:</span>
+        <span className="text-xs text-slate-400">{t('gallery.sortBy')}</span>
         <select
           value={sort}
           onChange={(e) => onSortChange(e.target.value as 'newest' | 'popular')}
           className="rounded bg-slate-700 px-2 py-1 text-xs text-slate-200 focus:outline-none"
         >
-          <option value="newest">Newest</option>
-          <option value="popular">Popular</option>
+          <option value="newest">{t('gallery.newest')}</option>
+          <option value="popular">{t('gallery.popular')}</option>
         </select>
       </div>
 
@@ -221,7 +229,7 @@ function BrowseView({
       {!loading && !error && images.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-8 text-slate-400">
           <ImageOff size={32} />
-          <span className="text-sm">No images found</span>
+          <span className="text-sm">{t('gallery.noImagesFound')}</span>
         </div>
       )}
 
@@ -244,7 +252,7 @@ function BrowseView({
                 <ChevronLeft size={16} />
               </button>
               <span className="text-xs text-slate-400">
-                {page} / {totalPages}
+                {t('gallery.page', { page, totalPages })}
               </span>
               <button
                 onClick={() => onPageChange(page + 1)}
@@ -296,6 +304,8 @@ function MyUploadsView({
   loading: boolean;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -308,7 +318,7 @@ function MyUploadsView({
     return (
       <div className="flex flex-col items-center gap-2 py-8 text-slate-400">
         <ImageOff size={32} />
-        <span className="text-sm">No uploads yet</span>
+        <span className="text-sm">{t('gallery.noUploadsYet')}</span>
       </div>
     );
   }
@@ -334,7 +344,7 @@ function MyUploadsView({
               onClick={() => onDelete(img.id)}
               className="rounded px-2 py-1 text-xs text-red-400 hover:bg-red-900/30"
             >
-              Delete
+              {t('gallery.delete')}
             </button>
           )}
         </div>
@@ -344,15 +354,18 @@ function MyUploadsView({
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   const colors: Record<string, string> = {
     pending: 'bg-yellow-900/40 text-yellow-300',
     approved: 'bg-green-900/40 text-green-300',
     rejected: 'bg-red-900/40 text-red-300',
   };
 
+  const statusKey = `gallery.${status}` as const;
+
   return (
     <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${colors[status] || ''}`}>
-      {status}
+      {t(statusKey)}
     </span>
   );
 }

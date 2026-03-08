@@ -1,10 +1,12 @@
 import { useStore } from '../../store/index.ts';
 import { PAPER_SIZES } from '../../utils/constants.ts';
 import type { PaperSize } from '../../types/index.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 const PAPER_OPTIONS = Object.entries(PAPER_SIZES) as [Exclude<PaperSize, 'custom'>, { label: string }][];
 
 export function PrintSettingsPanel() {
+  const { t } = useTranslation();
   const paperSize = useStore((s) => s.paperSize);
   const orientation = useStore((s) => s.orientation);
   const margins = useStore((s) => s.margins);
@@ -21,11 +23,11 @@ export function PrintSettingsPanel() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-slate-200">Print Settings</h3>
+      <h3 className="text-sm font-semibold text-slate-200">{t('print.title')}</h3>
 
       {/* Paper size */}
       <div>
-        <label className="mb-1 block text-xs text-slate-400">Paper Size</label>
+        <label className="mb-1 block text-xs text-slate-400">{t('print.paperSize')}</label>
         <select
           value={paperSize}
           onChange={(e) => setPaperSize(e.target.value as PaperSize)}
@@ -41,7 +43,7 @@ export function PrintSettingsPanel() {
 
       {/* Orientation */}
       <div>
-        <label className="mb-1 block text-xs text-slate-400">Orientation</label>
+        <label className="mb-1 block text-xs text-slate-400">{t('print.orientation')}</label>
         <div className="flex rounded-lg bg-slate-700 p-0.5">
           <button
             onClick={() => setOrientation('portrait')}
@@ -51,7 +53,7 @@ export function PrintSettingsPanel() {
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            Portrait
+            {t('print.portrait')}
           </button>
           <button
             onClick={() => setOrientation('landscape')}
@@ -61,7 +63,7 @@ export function PrintSettingsPanel() {
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            Landscape
+            {t('print.landscape')}
           </button>
         </div>
       </div>
@@ -69,8 +71,8 @@ export function PrintSettingsPanel() {
       {/* Margins */}
       <div>
         <label className="mb-1 flex items-center justify-between text-xs text-slate-400">
-          <span>Margins</span>
-          <span>{margins} mm</span>
+          <span>{t('print.margins')}</span>
+          <span>{t('print.marginsMm', { value: margins })}</span>
         </label>
         <input
           type="range"
@@ -86,8 +88,8 @@ export function PrintSettingsPanel() {
       {/* Spacing */}
       <div>
         <label className="mb-1 flex items-center justify-between text-xs text-slate-400">
-          <span>Token Spacing</span>
-          <span>{spacing} mm</span>
+          <span>{t('print.tokenSpacing')}</span>
+          <span>{t('print.spacingMm', { value: spacing })}</span>
         </label>
         <input
           type="range"
@@ -109,15 +111,15 @@ export function PrintSettingsPanel() {
             onChange={toggleCutMarks}
             className="mr-2 rounded border-slate-600 bg-slate-700 text-indigo-600 focus:ring-indigo-500"
           />
-          <span>Cut Marks</span>
+          <span>{t('print.cutMarks')}</span>
         </label>
       </div>
 
       {/* Bleed */}
       <div>
         <label className="mb-1 flex items-center justify-between text-xs text-slate-400">
-          <span>Bleed</span>
-          <span>{bleed} mm</span>
+          <span>{t('print.bleed')}</span>
+          <span>{t('print.bleedMm', { value: bleed })}</span>
         </label>
         <input
           type="range"
@@ -136,13 +138,13 @@ export function PrintSettingsPanel() {
           onClick={openExportModal}
           className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-800"
         >
-          Export PDF
+          {t('print.exportPdf')}
         </button>
         <button
           onClick={openExportModal}
           className="w-full rounded-md border border-indigo-600 px-4 py-2 text-sm font-medium text-indigo-400 transition-colors hover:bg-indigo-600/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-800"
         >
-          Export PNG
+          {t('print.exportPng')}
         </button>
       </div>
     </div>

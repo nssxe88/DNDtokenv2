@@ -9,11 +9,17 @@ import {
   Redo2,
   FolderOpen,
   Save,
+  Globe,
 } from 'lucide-react';
 import { useStore } from '../../store/index.ts';
 import { clamp } from '../../utils/math.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
+import type { Language } from '../../i18n/index.ts';
 
 export function CanvasToolbar() {
+  const { t, language } = useTranslation();
+  const setLanguage = useStore((s) => s.setLanguage);
+
   const mode = useStore((s) => s.mode);
   const setMode = useStore((s) => s.setMode);
   const zoom = useStore((s) => s.zoom);
@@ -36,13 +42,18 @@ export function CanvasToolbar() {
   const handleZoomIn = () => setZoom(clamp(zoom + 0.1, 0.2, 5));
   const handleZoomOut = () => setZoom(clamp(zoom - 0.1, 0.2, 5));
 
+  const toggleLanguage = () => {
+    const next: Language = language === 'en' ? 'hu' : 'en';
+    setLanguage(next);
+  };
+
   return (
     <div className="flex items-center gap-2 border-b border-slate-700 bg-slate-800 px-4 py-2">
       {/* Project info */}
       <button
         onClick={openProjectManager}
         className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
-        title="Projekt kezel\u0151"
+        title={t('toolbar.projectManager')}
       >
         <FolderOpen size={14} />
         <span className="max-w-[120px] truncate">{currentProjectName}</span>
@@ -52,7 +63,7 @@ export function CanvasToolbar() {
       <button
         onClick={() => saveCurrentProject()}
         className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
-        title="Ment\u00e9s (Ctrl+S)"
+        title={t('toolbar.save')}
       >
         <Save size={14} />
       </button>
@@ -64,7 +75,7 @@ export function CanvasToolbar() {
         onClick={undo}
         disabled={!canUndo}
         className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-        title="Visszavon\u00e1s (Ctrl+Z)"
+        title={t('toolbar.undo')}
       >
         <Undo2 size={16} />
       </button>
@@ -72,7 +83,7 @@ export function CanvasToolbar() {
         onClick={redo}
         disabled={!canRedo}
         className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-        title="\u00dajra (Ctrl+Shift+Z)"
+        title={t('toolbar.redo')}
       >
         <Redo2 size={16} />
       </button>
@@ -90,7 +101,7 @@ export function CanvasToolbar() {
           }`}
         >
           <Edit3 size={14} />
-          Edit
+          {t('toolbar.edit')}
         </button>
         <button
           onClick={() => setMode('print-layout')}
@@ -101,7 +112,7 @@ export function CanvasToolbar() {
           }`}
         >
           <LayoutGrid size={14} />
-          Print Layout
+          {t('toolbar.printLayout')}
         </button>
       </div>
 
@@ -115,7 +126,7 @@ export function CanvasToolbar() {
             ? 'bg-primary-600/20 text-primary-400'
             : 'text-slate-400 hover:text-white'
         }`}
-        title="R\u00e1cs (Ctrl+G)"
+        title={t('toolbar.grid')}
       >
         <Grid3X3 size={16} />
       </button>
@@ -126,7 +137,7 @@ export function CanvasToolbar() {
             ? 'bg-primary-600/20 text-primary-400'
             : 'text-slate-400 hover:text-white'
         }`}
-        title="Illeszt\u00e9s r\u00e1cshoz"
+        title={t('toolbar.snapToGrid')}
       >
         <Magnet size={16} />
       </button>
@@ -137,7 +148,7 @@ export function CanvasToolbar() {
       <button
         onClick={handleZoomOut}
         className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
-        title="Kicsiny\u00edt\u00e9s (-)"
+        title={t('toolbar.zoomOut')}
       >
         <ZoomOut size={16} />
       </button>
@@ -147,9 +158,22 @@ export function CanvasToolbar() {
       <button
         onClick={handleZoomIn}
         className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
-        title="Nagy\u00edt\u00e1s (+)"
+        title={t('toolbar.zoomIn')}
       >
         <ZoomIn size={16} />
+      </button>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Language switcher */}
+      <button
+        onClick={toggleLanguage}
+        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+        title={t('toolbar.language')}
+      >
+        <Globe size={14} />
+        <span className="uppercase font-medium">{language}</span>
       </button>
     </div>
   );

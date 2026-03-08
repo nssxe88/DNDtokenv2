@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import type { ProjectMeta, ProjectData } from '../services/projectStorage.ts';
 import * as storage from '../services/projectStorage.ts';
 import type { Token, PrintSettings } from '../types/index.ts';
+import { t as translate } from '../i18n/index.ts';
+import type { Language } from '../i18n/index.ts';
 
 export interface ProjectSlice {
   // Current project info
@@ -39,6 +41,7 @@ interface FullState {
   bleed: number;
   currentProjectId: string | null;
   currentProjectName: string;
+  language: Language;
   clearHistory: () => void;
   clearAllTokens: () => void;
   clearSelection: () => void;
@@ -113,13 +116,16 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get, api) =>
     const projects = await storage.listProjects();
     set({ savedProjects: projects });
 
-    toast.success('Projekt mentve!');
+    toast.success(translate(getFullState(api).language, 'project.projectSaved'));
   },
 
   loadProject: async (id) => {
     const data = await storage.loadProject(id);
     if (!data) {
-      toast.error('A projekt nem tal\u00e1lhat\u00f3');
+      toast.error(translate(getFullState(api).language, 'project.projectNotFound'));
+      // Refresh project list to remove stale entries
+      const projects = await storage.listProjects();
+      set({ savedProjects: projects });
       return;
     }
 
@@ -146,7 +152,7 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get, api) =>
     state.clearHistory();
     state.clearSelection();
 
-    toast.success(`"${data.meta.name}" bet\u00f6ltve!`);
+    toast.success(translate(getFullState(api).language, 'project.projectLoaded', { name: data.meta.name }));
   },
 
   deleteProject: async (id) => {
@@ -157,7 +163,7 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get, api) =>
     }
     const projects = await storage.listProjects();
     set({ savedProjects: projects });
-    toast.success('Projekt t\u00f6r\u00f6lve');
+    toast.success(translate(getFullState(api).language, 'project.projectDeleted'));
   },
 
   renameProject: async (id, newName) => {
@@ -183,7 +189,7 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get, api) =>
       projectDirty: false,
     });
 
-    toast.success('\u00daj projekt l\u00e9trehozva');
+    toast.success(translate(getFullState(api).language, 'project.newProjectCreated'));
   },
 
   markDirty: () => {
@@ -222,7 +228,7 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get, api) =>
   importProjectFile: async (file) => {
     const data = await storage.importProjectFromFile(file);
     if (!data) {
-      toast.error('Nem siker\u00fclt a f\u00e1jl import\u00e1l\u00e1sa');
+      toast.error(translate(getFullState(api).language, 'project.importFailed'));
       return;
     }
 

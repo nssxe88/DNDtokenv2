@@ -3,19 +3,25 @@ import { X, Upload, ImagePlus, Loader2 } from 'lucide-react';
 import { useStore } from '../../store/index.ts';
 import type { GalleryCategory } from '../../types/index.ts';
 import toast from 'react-hot-toast';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
-const CATEGORIES: { value: GalleryCategory; label: string }[] = [
-  { value: 'creature', label: 'Creature' },
-  { value: 'humanoid', label: 'Humanoid' },
-  { value: 'undead', label: 'Undead' },
-  { value: 'environment', label: 'Environment' },
-  { value: 'item', label: 'Item' },
-  { value: 'vehicle', label: 'Vehicle' },
-  { value: 'effect', label: 'Effect' },
-  { value: 'other', label: 'Other' },
+const CATEGORY_VALUES: GalleryCategory[] = [
+  'creature', 'humanoid', 'undead', 'environment', 'item', 'vehicle', 'effect', 'other',
 ];
 
+const CATEGORY_KEYS: Record<GalleryCategory, string> = {
+  creature: 'galleryUploadCategories.creature',
+  humanoid: 'galleryUploadCategories.humanoid',
+  undead: 'galleryUploadCategories.undead',
+  environment: 'galleryUploadCategories.environment',
+  item: 'galleryUploadCategories.item',
+  vehicle: 'galleryUploadCategories.vehicle',
+  effect: 'galleryUploadCategories.effect',
+  other: 'galleryUploadCategories.other',
+};
+
 export function GalleryUploadModal() {
+  const { t } = useTranslation();
   const { galleryUploadModalOpen, setGalleryUploadModalOpen, uploadToGallery } = useStore();
 
   const [name, setName] = useState('');
@@ -48,7 +54,7 @@ export function GalleryUploadModal() {
 
   const handleSubmit = async () => {
     if (!file || !name.trim()) {
-      toast.error('Please select an image and enter a name');
+      toast.error(t('galleryUpload.validationError'));
       return;
     }
 
@@ -56,7 +62,7 @@ export function GalleryUploadModal() {
     try {
       const tags = tagsInput
         .split(',')
-        .map((t) => t.trim())
+        .map((tg) => tg.trim())
         .filter(Boolean);
 
       await uploadToGallery({
@@ -68,11 +74,11 @@ export function GalleryUploadModal() {
       });
 
       toast.success(
-        isPrivate ? 'Image uploaded as private' : 'Image submitted for review'
+        isPrivate ? t('galleryUpload.uploadedPrivate') : t('galleryUpload.uploadedPublic')
       );
       resetForm();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed');
+      toast.error(err instanceof Error ? err.message : t('galleryUpload.uploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -98,7 +104,7 @@ export function GalleryUploadModal() {
       <div className="relative mx-4 w-full max-w-md rounded-xl bg-slate-800 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-700 px-5 py-4">
-          <h2 className="text-lg font-semibold text-white">Upload to Gallery</h2>
+          <h2 className="text-lg font-semibold text-white">{t('galleryUpload.title')}</h2>
           <button
             onClick={handleClose}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-700 hover:text-white"
@@ -117,8 +123,8 @@ export function GalleryUploadModal() {
               className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-slate-600 p-8 text-slate-400 transition-colors hover:border-primary-400 hover:text-primary-400"
             >
               <ImagePlus size={32} />
-              <span className="text-sm">Click or drop an image here</span>
-              <span className="text-xs">PNG, JPG, WebP (max 10MB)</span>
+              <span className="text-sm">{t('galleryUpload.dropImage')}</span>
+              <span className="text-xs">{t('galleryUpload.formatInfo')}</span>
             </div>
           ) : (
             <div className="relative">
@@ -153,26 +159,26 @@ export function GalleryUploadModal() {
 
           {/* Name */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">Name</label>
+            <label className="mb-1 block text-xs font-medium text-slate-400">{t('galleryUpload.name')}</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Red Dragon"
+              placeholder={t('galleryUpload.namePlaceholder')}
               className="w-full rounded-lg bg-slate-700 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-400"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">Category</label>
+            <label className="mb-1 block text-xs font-medium text-slate-400">{t('galleryUpload.category')}</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as GalleryCategory)}
               className="w-full rounded-lg bg-slate-700 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary-400"
             >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
+              {CATEGORY_VALUES.map((c) => (
+                <option key={c} value={c}>
+                  {t(CATEGORY_KEYS[c])}
                 </option>
               ))}
             </select>
@@ -181,12 +187,12 @@ export function GalleryUploadModal() {
           {/* Tags */}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-400">
-              Tags (comma-separated)
+              {t('galleryUpload.tags')}
             </label>
             <input
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="e.g. dragon, fire, boss"
+              placeholder={t('galleryUpload.tagsPlaceholder')}
               className="w-full rounded-lg bg-slate-700 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-400"
             />
           </div>
@@ -206,7 +212,7 @@ export function GalleryUploadModal() {
               />
             </div>
             <span className="text-sm text-slate-300">
-              {isPrivate ? 'Private — only you can see it' : 'Public — visible after admin approval'}
+              {isPrivate ? t('galleryUpload.private') : t('galleryUpload.public')}
             </span>
           </label>
 
@@ -219,12 +225,12 @@ export function GalleryUploadModal() {
             {uploading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Uploading...
+                {t('galleryUpload.uploading')}
               </>
             ) : (
               <>
                 <Upload size={16} />
-                Upload
+                {t('galleryUpload.upload')}
               </>
             )}
           </button>

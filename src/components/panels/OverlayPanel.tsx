@@ -1,38 +1,32 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Upload, Trash2, ImagePlus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore } from '../../store/index.ts';
 import type { OverlayAsset } from '../../types/index.ts';
-
-// Store overlays locally since they're not in a slice yet (Phase 1 simplification)
-// In Phase 4 this will move to librarySlice
-let overlayAssets: OverlayAsset[] = [];
-const listeners = new Set<() => void>();
+import {
+  getOverlays,
+  addOverlayAsset,
+  removeOverlayAsset,
+  subscribeOverlays,
+} from '../../services/overlayStore.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 function useOverlayAssets() {
   const [, forceUpdate] = useState(0);
 
-  const addOverlay = useCallback((asset: OverlayAsset) => {
-    overlayAssets = [...overlayAssets, asset];
-    listeners.forEach((l) => l());
+  useEffect(() => {
+    return subscribeOverlays(() => forceUpdate((n) => n + 1));
   }, []);
 
-  const removeOverlay = useCallback((id: string) => {
-    overlayAssets = overlayAssets.filter((a) => a.id !== id);
-    listeners.forEach((l) => l());
-  }, []);
-
-  // Subscribe to changes
-  useState(() => {
-    const handler = () => forceUpdate((n) => n + 1);
-    listeners.add(handler);
-    return () => { listeners.delete(handler); };
-  });
-
-  return { overlays: overlayAssets, addOverlay, removeOverlay };
+  return {
+    overlays: getOverlays(),
+    addOverlay: addOverlayAsset,
+    removeOverlay: removeOverlayAsset,
+  };
 }
 
 export function OverlayPanel() {
+  const { t } = useTranslation();
   const updateToken = useStore((s) => s.updateToken);
   const selectedTokenIds = useStore((s) => s.selectedTokenIds);
   const tokens = useStore((s) => s.tokens);
@@ -40,7 +34,7 @@ export function OverlayPanel() {
   const [isDragging, setIsDragging] = useState(false);
   const { overlays, addOverlay, removeOverlay } = useOverlayAssets();
 
-  const selectedToken = tokens.find((t) => selectedTokenIds.includes(t.id));
+  const selectedToken = tokens.find((tk) => selectedTokenIds.includes(tk.id));
 
   const processFile = useCallback(
     (file: File) => {
@@ -100,7 +94,7 @@ export function OverlayPanel() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-slate-200">Overlays</h3>
+      <h3 className="text-sm font-semibold text-slate-200">{t('overlay.title')}</h3>
 
       {/* Upload overlay zone */}
       <div
@@ -119,7 +113,7 @@ export function OverlayPanel() {
         ) : (
           <ImagePlus size={20} className="text-slate-400" />
         )}
-        <p className="text-xs text-slate-400">Upload overlay frame</p>
+        <p className="text-xs text-slate-400">{t('overlay.uploadOverlay')}</p>
       </div>
 
       <input
@@ -135,22 +129,22 @@ export function OverlayPanel() {
       {selectedToken && (
         <div className="rounded-lg border border-slate-700 bg-slate-700/30 p-3">
           <p className="text-xs text-slate-400">
-            Selected: <span className="text-slate-200">{selectedToken.fileName}</span>
+            {t('overlay.selected', { name: selectedToken.fileName })}
           </p>
           {selectedToken.overlayId && (
             <div className="mt-2 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400">Overlay applied</span>
+                <span className="text-xs text-slate-400">{t('overlay.overlayApplied')}</span>
                 <button
                   onClick={removeOverlayFromToken}
                   className="text-xs text-red-400 hover:text-red-300"
                 >
-                  Remove
+                  {t('overlay.remove')}
                 </button>
               </div>
               <div>
                 <label className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Opacity</span>
+                  <span>{t('overlay.opacity')}</span>
                   <span>{Math.round(selectedToken.overlayOpacity * 100)}%</span>
                 </label>
                 <input
@@ -175,7 +169,7 @@ export function OverlayPanel() {
       {overlays.length > 0 && (
         <div>
           <p className="mb-2 text-xs text-slate-400">
-            Click to apply to selected token
+            {t('overlay.clickToApply')}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {overlays.map((overlay) => (
@@ -210,7 +204,7 @@ export function OverlayPanel() {
 
       {overlays.length === 0 && (
         <p className="text-xs text-slate-500">
-          No overlays yet. Upload overlay frames (PNG with transparency) to get started.
+          {t('overlay.noOverlays')}
         </p>
       )}
     </div>

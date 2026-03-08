@@ -11,8 +11,10 @@ import {
   Clock,
 } from 'lucide-react';
 import { useStore } from '../../store/index.ts';
+import { useTranslation } from '../../i18n/useTranslation.ts';
 
 export function ProjectManagerModal() {
+  const { t, language } = useTranslation();
   const open = useStore((s) => s.projectManagerOpen);
   const closeModal = useStore((s) => s.closeProjectManager);
   const savedProjects = useStore((s) => s.savedProjects);
@@ -34,20 +36,20 @@ export function ProjectManagerModal() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync save name when project name changes or modal opens
+  // Load projects when modal opens, sync save name
   const prevOpen = useRef(false);
+  const prevProjectName = useRef(currentProjectName);
   useEffect(() => {
     if (open && !prevOpen.current) {
       loadSavedProjects();
-    }
-    prevOpen.current = open;
-  }, [open, loadSavedProjects]);
-
-  useEffect(() => {
-    if (open) {
       setSaveName(currentProjectName);
     }
-  }, [currentProjectName]); // eslint-disable-line react-hooks/set-state-in-effect
+    if (open && currentProjectName !== prevProjectName.current) {
+      setSaveName(currentProjectName);
+    }
+    prevOpen.current = open;
+    prevProjectName.current = currentProjectName;
+  }, [open, loadSavedProjects, currentProjectName]);
 
   if (!open) return null;
 
@@ -74,17 +76,18 @@ export function ProjectManagerModal() {
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    try {
       await importProjectFile(file);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-    // Reset input so same file can be re-imported
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const formatDate = (iso: string): string => {
     try {
       const d = new Date(iso);
-      return d.toLocaleDateString('hu-HU', {
+      return d.toLocaleDateString(language === 'hu' ? 'hu-HU' : 'en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -101,11 +104,11 @@ export function ProjectManagerModal() {
       <div className="mx-4 w-full max-w-xl rounded-lg bg-slate-800 shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-700 px-6 py-4">
-          <h2 className="text-xl font-semibold text-slate-200">Projekt Kezel\u0151</h2>
+          <h2 className="text-xl font-semibold text-slate-200">{t('project.title')}</h2>
           <button
             onClick={closeModal}
             className="text-slate-400 transition-colors hover:text-slate-200"
-            aria-label="Bez\u00e1r\u00e1s"
+            aria-label={t('project.close')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -113,14 +116,14 @@ export function ProjectManagerModal() {
 
         {/* Save current project */}
         <div className="border-b border-slate-700 px-6 py-4">
-          <h3 className="mb-3 text-sm font-medium text-slate-300">Ment\u00e9s</h3>
+          <h3 className="mb-3 text-sm font-medium text-slate-300">{t('project.saveSection')}</h3>
           <div className="flex gap-2">
             <input
               type="text"
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              placeholder="Projekt neve..."
+              placeholder={t('project.projectNamePlaceholder')}
               className="flex-1 rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
@@ -128,11 +131,11 @@ export function ProjectManagerModal() {
               className="flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600"
             >
               <Save className="h-4 w-4" />
-              Ment\u00e9s
+              {t('project.saveButton')}
             </button>
           </div>
           {projectDirty && (
-            <p className="mt-1 text-xs text-amber-400">Nem mentett v\u00e1ltoz\u00e1sok</p>
+            <p className="mt-1 text-xs text-amber-400">{t('project.unsavedChanges')}</p>
           )}
         </div>
 
@@ -143,21 +146,21 @@ export function ProjectManagerModal() {
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
           >
             <FilePlus2 className="h-3.5 w-3.5" />
-            \u00daj Projekt
+            {t('project.newProject')}
           </button>
           <button
             onClick={exportProjectFile}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
           >
             <Download className="h-3.5 w-3.5" />
-            Export\u00e1l\u00e1s
+            {t('project.exportProject')}
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
           >
             <Upload className="h-3.5 w-3.5" />
-            Import\u00e1l\u00e1s
+            {t('project.importProject')}
           </button>
           <input
             ref={fileInputRef}
@@ -170,10 +173,10 @@ export function ProjectManagerModal() {
 
         {/* Saved projects list */}
         <div className="max-h-80 overflow-y-auto px-6 py-4">
-          <h3 className="mb-3 text-sm font-medium text-slate-300">Mentett Projektek</h3>
+          <h3 className="mb-3 text-sm font-medium text-slate-300">{t('project.savedProjects')}</h3>
           {savedProjects.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">
-              M\u00e9g nincs mentett projekt
+              {t('project.noSavedProjects')}
             </p>
           ) : (
             <div className="space-y-2">
@@ -218,14 +221,14 @@ export function ProjectManagerModal() {
                       <p className="truncate text-sm font-medium text-slate-200">
                         {project.name}
                         {project.id === currentProjectId && (
-                          <span className="ml-2 text-xs text-blue-400">(akt\u00edv)</span>
+                          <span className="ml-2 text-xs text-blue-400">{t('project.active')}</span>
                         )}
                       </p>
                     )}
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                       <Clock className="h-3 w-3" />
                       {formatDate(project.updatedAt)}
-                      <span>\u00b7 {project.tokenCount} token</span>
+                      <span>&middot; {t('project.tokenCountLabel', { count: project.tokenCount })}</span>
                     </div>
                   </div>
 
@@ -234,7 +237,7 @@ export function ProjectManagerModal() {
                     <button
                       onClick={() => handleLoad(project.id)}
                       className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-600 hover:text-white"
-                      title="Bet\u00f6lt\u00e9s"
+                      title={t('project.load')}
                     >
                       <FolderOpen className="h-4 w-4" />
                     </button>
@@ -244,7 +247,7 @@ export function ProjectManagerModal() {
                         setRenameValue(project.name);
                       }}
                       className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-600 hover:text-white"
-                      title="\u00c1tnevez\u00e9s"
+                      title={t('project.rename')}
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
@@ -253,13 +256,13 @@ export function ProjectManagerModal() {
                         onClick={() => handleDelete(project.id)}
                         className="rounded bg-red-500/20 px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-500/30"
                       >
-                        T\u00f6rl\u00e9s?
+                        {t('project.deleteConfirm')}
                       </button>
                     ) : (
                       <button
                         onClick={() => setConfirmDeleteId(project.id)}
                         className="rounded p-1.5 text-slate-400 transition-colors hover:bg-red-500/20 hover:text-red-400"
-                        title="T\u00f6rl\u00e9s"
+                        title={t('project.deleteProject')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -277,7 +280,7 @@ export function ProjectManagerModal() {
             onClick={closeModal}
             className="rounded-md px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-slate-200"
           >
-            Bez\u00e1r\u00e1s
+            {t('project.close')}
           </button>
         </div>
       </div>
