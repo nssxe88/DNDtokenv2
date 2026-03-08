@@ -58,6 +58,13 @@ cd server && npm run dev    # Express/Fastify dev server
 cd server && npm run test   # Backend tests
 ```
 
+## Agent Workflow
+- **frontend-dev agent:** Use for complex React/Konva component work
+- **backend-dev agent:** Use for API endpoints, database, server-side logic
+- **code-reviewer agent:** Run at the END of every phase before committing — review code quality, TypeScript errors, missing types
+- **test-runner agent:** Run after code-reviewer passes — execute all tests, report failures
+- **Workflow per phase:** Code → code-reviewer → fix issues → test-runner → fix failures → git commit & push
+
 ## Code Standards
 - TypeScript strict mode — no `any` types
 - Functional React components with hooks only

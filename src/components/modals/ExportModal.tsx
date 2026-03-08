@@ -135,8 +135,8 @@ export function ExportModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-slate-800 rounded-lg shadow-xl max-w-lg w-full mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-slate-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
           <h2 className="text-xl font-semibold text-slate-200">{t('export.title')}</h2>

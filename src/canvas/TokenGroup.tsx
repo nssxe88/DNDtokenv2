@@ -7,6 +7,7 @@ import { useLibraryAssetImage } from '../hooks/useLibraryAssetImage.ts';
 import { useStore } from '../store/index.ts';
 import { mmToPx } from '../utils/units.ts';
 import { drawShapePath } from '../utils/shapes.ts';
+import { getOverlayById } from '../services/overlayStore.ts';
 
 interface TokenGroupProps {
   token: Token;
@@ -29,6 +30,10 @@ export function TokenGroup({
 }: TokenGroupProps) {
   const groupRef = useRef<Konva.Group>(null);
   const image = useImageLoader(token.processedSrc);
+
+  // User-uploaded overlay image
+  const userOverlay = token.overlayId ? getOverlayById(token.overlayId) : null;
+  const userOverlayImage = useImageLoader(userOverlay?.src ?? null);
 
   // Library asset overlay image
   const libraryAssets = useStore((s) => s.libraryAssets);
@@ -59,12 +64,12 @@ export function TokenGroup({
 
   if (!token.visible) return null;
 
-  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     e.cancelBubble = true;
     onSelect(token.id);
   };
 
-  const handleDblClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleDblClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     e.cancelBubble = true;
     onDblClick?.(token.id);
   };
@@ -91,8 +96,9 @@ export function TokenGroup({
     : 1;
   const imgWidth = image ? image.width * imgScale : sizePx;
   const imgHeight = image ? image.height * imgScale : sizePx;
-  const imgX = (sizePx - imgWidth) / 2 + token.imageCrop.offsetX;
-  const imgY = (sizePx - imgHeight) / 2 + token.imageCrop.offsetY;
+  // Offsets are stored as fractions of token size (normalized in ImagePositionModal)
+  const imgX = (sizePx - imgWidth) / 2 + token.imageCrop.offsetX * sizePx;
+  const imgY = (sizePx - imgHeight) / 2 + token.imageCrop.offsetY * sizePx;
 
   // Build hexagon points for frame & selection
   const hexFramePoints: number[] = [];
@@ -178,6 +184,18 @@ export function TokenGroup({
           y={-frameThicknessPx}
           width={totalSizePx}
           height={totalSizePx}
+        />
+      )}
+
+      {/* User-uploaded overlay (rendered on top, with opacity) */}
+      {userOverlayImage && (
+        <KonvaImage
+          image={userOverlayImage}
+          x={-frameThicknessPx}
+          y={-frameThicknessPx}
+          width={totalSizePx}
+          height={totalSizePx}
+          opacity={token.overlayOpacity}
         />
       )}
 

@@ -243,8 +243,8 @@ export function ImagePositionModal() {
     : 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-[440px] rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-[440px] rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-700 px-6 py-4">
           <h2 className="text-sm font-semibold text-slate-200">

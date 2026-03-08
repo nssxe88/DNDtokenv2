@@ -10,6 +10,7 @@
 import type { Token } from '../types/index.ts';
 import type { LibraryAsset } from '../types/index.ts';
 import { loadAssetImage } from './assetLoader.ts';
+import { getOverlayById } from './overlayStore.ts';
 
 /** Load an image from a src URL, returning an HTMLImageElement */
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -32,6 +33,18 @@ async function loadLibraryOverlay(
   if (!asset) return null;
   try {
     return await loadAssetImage(asset.file);
+  } catch {
+    return null;
+  }
+}
+
+/** Try to load the user-uploaded overlay image for a token. */
+async function loadUserOverlay(token: Token): Promise<HTMLImageElement | null> {
+  if (!token.overlayId) return null;
+  const overlay = getOverlayById(token.overlayId);
+  if (!overlay) return null;
+  try {
+    return await loadImage(overlay.src);
   } catch {
     return null;
   }
@@ -85,17 +98,13 @@ export async function renderTokenToCanvas(
   ctx.clip();
 
   // Calculate image position (matching TokenGroup logic exactly)
-  // The imageCrop offsets are stored in canvas pixels (96 DPI).
-  // We need to scale them proportionally to the export resolution.
-  const canvasSizePx = tokenSizeAtCanvasDPI(token);
-  const scaleFactor = sizePx / canvasSizePx;
-
+  // Offsets are stored as normalized fractions of token size.
   const imgScale =
     Math.max(sizePx / image.width, sizePx / image.height) * token.imageCrop.scale;
   const imgWidth = image.width * imgScale;
   const imgHeight = image.height * imgScale;
-  const imgX = (sizePx - imgWidth) / 2 + token.imageCrop.offsetX * scaleFactor;
-  const imgY = (sizePx - imgHeight) / 2 + token.imageCrop.offsetY * scaleFactor;
+  const imgX = (sizePx - imgWidth) / 2 + token.imageCrop.offsetX * sizePx;
+  const imgY = (sizePx - imgHeight) / 2 + token.imageCrop.offsetY * sizePx;
 
   ctx.drawImage(image, imgX, imgY, imgWidth, imgHeight);
 
@@ -107,15 +116,16 @@ export async function renderTokenToCanvas(
     ctx.drawImage(overlayImage, 0, 0, totalSizePx, totalSizePx);
   }
 
-  return canvas;
-}
+  // 4. Draw user-uploaded overlay (on top, with opacity)
+  const userOverlayImage = await loadUserOverlay(token);
+  if (userOverlayImage) {
+    ctx.save();
+    ctx.globalAlpha = token.overlayOpacity;
+    ctx.drawImage(userOverlayImage, 0, 0, totalSizePx, totalSizePx);
+    ctx.restore();
+  }
 
-/**
- * Get the canvas-DPI size that was used when the crop offsets were set.
- * TokenGroup uses mmToPx(token.sizeMm) with CANVAS_DPI=96.
- */
-function tokenSizeAtCanvasDPI(token: Token): number {
-  return (token.sizeMm / 25.4) * 96;
+  return canvas;
 }
 
 /** Draw a shape path at position (0,0) on a 2D context */

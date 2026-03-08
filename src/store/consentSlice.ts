@@ -29,8 +29,23 @@ function loadConsent(): CookieConsent | null {
   try {
     const raw = localStorage.getItem(CONSENT_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as CookieConsent;
+    const data: unknown = JSON.parse(raw);
+
+    // Runtime validation to prevent localStorage injection
+    if (
+      typeof data !== 'object' ||
+      data === null ||
+      typeof (data as CookieConsent).necessary !== 'boolean' ||
+      typeof (data as CookieConsent).analytics !== 'boolean' ||
+      typeof (data as CookieConsent).advertising !== 'boolean'
+    ) {
+      localStorage.removeItem(CONSENT_STORAGE_KEY);
+      return null;
+    }
+
+    return data as CookieConsent;
   } catch {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
     return null;
   }
 }

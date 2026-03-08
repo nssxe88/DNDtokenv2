@@ -7,6 +7,9 @@ export interface EditorSlice extends EditorState {
   cropModalTokenId: string | null;
   exportModalOpen: boolean;
 
+  // Sidebar state (responsive)
+  sidebarOpen: boolean;
+
   setMode: (mode: EditorState['mode']) => void;
   selectToken: (id: string) => void;
   addToSelection: (id: string) => void;
@@ -24,6 +27,8 @@ export interface EditorSlice extends EditorState {
   closeCropModal: () => void;
   openExportModal: () => void;
   closeExportModal: () => void;
+  toggleSidebar: () => void;
+  setSidebarOpen: (open: boolean) => void;
 }
 
 export const createEditorSlice: StateCreator<EditorSlice> = (set) => ({
@@ -38,6 +43,7 @@ export const createEditorSlice: StateCreator<EditorSlice> = (set) => ({
   showCutMarks: false,
   cropModalTokenId: null,
   exportModalOpen: false,
+  sidebarOpen: true,
 
   setMode: (mode) => set({ mode }),
 
@@ -80,4 +86,7 @@ export const createEditorSlice: StateCreator<EditorSlice> = (set) => ({
   openExportModal: () => set({ exportModalOpen: true }),
 
   closeExportModal: () => set({ exportModalOpen: false }),
+
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+  setSidebarOpen: (open) => set({ sidebarOpen: open }),
 });

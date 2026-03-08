@@ -1,22 +1,22 @@
 import type { DnDSizePreset, PaperSize, TokenShape } from '../types/index.ts';
 
-// DnD size presets in mm
+// DnD size presets in mm (based on standard miniature base sizes)
 export const DND_SIZE_PRESETS: Record<DnDSizePreset, number> = {
   tiny: 12,
   small: 20,
-  medium: 20,
-  large: 40,
-  huge: 65,
-  gargantuan: 90,
+  medium: 25,
+  large: 50,
+  huge: 75,
+  gargantuan: 100,
 };
 
 export const DND_SIZE_LABELS: Record<DnDSizePreset, string> = {
   tiny: 'Tiny (12mm)',
   small: 'Small (20mm)',
-  medium: 'Medium (20mm)',
-  large: 'Large (40mm)',
-  huge: 'Huge (65mm)',
-  gargantuan: 'Gargantuan (90mm)',
+  medium: 'Medium (25mm)',
+  large: 'Large (50mm)',
+  huge: 'Huge (75mm)',
+  gargantuan: 'Gargantuan (100mm)',
 };
 
 // Paper sizes in mm (width x height in portrait)
@@ -36,7 +36,7 @@ export const TOKEN_SHAPES: { value: TokenShape; label: string }[] = [
 ];
 
 // Default values
-export const DEFAULT_TOKEN_SIZE_MM = 20;
+export const DEFAULT_TOKEN_SIZE_MM = 25;
 export const DEFAULT_FRAME_THICKNESS_MM = 1;
 export const DEFAULT_FRAME_COLOR = '#c0a060';
 export const DEFAULT_PAPER_MARGINS_MM = 5;

@@ -53,10 +53,10 @@
   "sizes": {
     "tiny": "Tiny (12mm)",
     "small": "Small (20mm)",
-    "medium": "Medium (20mm)",
-    "large": "Large (40mm)",
-    "huge": "Huge (65mm)",
-    "gargantuan": "Gargantuan (90mm)"
+    "medium": "Medium (25mm)",
+    "large": "Large (50mm)",
+    "huge": "Huge (75mm)",
+    "gargantuan": "Gargantuan (100mm)"
   },
   "overlay": {
     "title": "Overlays",

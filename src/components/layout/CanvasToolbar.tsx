@@ -48,33 +48,33 @@ export function CanvasToolbar() {
   };
 
   return (
-    <div className="flex items-center gap-2 border-b border-slate-700 bg-slate-800 px-4 py-2">
+    <div className="flex items-center gap-1 overflow-x-auto px-2 py-2 sm:gap-2 sm:px-4">
       {/* Project info */}
       <button
         onClick={openProjectManager}
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+        className="flex flex-shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
         title={t('toolbar.projectManager')}
       >
         <FolderOpen size={14} />
-        <span className="max-w-[120px] truncate">{currentProjectName}</span>
+        <span className="hidden max-w-[120px] truncate sm:inline">{currentProjectName}</span>
         {projectDirty && <span className="text-amber-400">*</span>}
       </button>
 
       <button
         onClick={() => saveCurrentProject()}
-        className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
+        className="flex-shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
         title={t('toolbar.save')}
       >
         <Save size={14} />
       </button>
 
-      <div className="mx-2 h-5 w-px bg-slate-600" />
+      <div className="mx-1 h-5 w-px flex-shrink-0 bg-slate-600 sm:mx-2" />
 
       {/* Undo / Redo */}
       <button
         onClick={undo}
         disabled={!canUndo}
-        className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+        className="flex-shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
         title={t('toolbar.undo')}
       >
         <Undo2 size={16} />
@@ -82,46 +82,46 @@ export function CanvasToolbar() {
       <button
         onClick={redo}
         disabled={!canRedo}
-        className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+        className="flex-shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
         title={t('toolbar.redo')}
       >
         <Redo2 size={16} />
       </button>
 
-      <div className="mx-2 h-5 w-px bg-slate-600" />
+      <div className="mx-1 h-5 w-px flex-shrink-0 bg-slate-600 sm:mx-2" />
 
       {/* Mode toggle */}
-      <div className="flex rounded-lg bg-slate-700 p-0.5">
+      <div className="flex flex-shrink-0 rounded-lg bg-slate-700 p-0.5">
         <button
           onClick={() => setMode('edit')}
-          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${
             mode === 'edit'
               ? 'bg-primary-600 text-white'
               : 'text-slate-300 hover:text-white'
           }`}
         >
           <Edit3 size={14} />
-          {t('toolbar.edit')}
+          <span className="hidden sm:inline">{t('toolbar.edit')}</span>
         </button>
         <button
           onClick={() => setMode('print-layout')}
-          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${
             mode === 'print-layout'
               ? 'bg-primary-600 text-white'
               : 'text-slate-300 hover:text-white'
           }`}
         >
           <LayoutGrid size={14} />
-          {t('toolbar.printLayout')}
+          <span className="hidden sm:inline">{t('toolbar.printLayout')}</span>
         </button>
       </div>
 
-      <div className="mx-2 h-5 w-px bg-slate-600" />
+      <div className="mx-1 h-5 w-px flex-shrink-0 bg-slate-600 sm:mx-2" />
 
       {/* Grid & Snap */}
       <button
         onClick={toggleGrid}
-        className={`rounded-md p-1.5 transition-colors ${
+        className={`flex-shrink-0 rounded-md p-1.5 transition-colors ${
           gridEnabled
             ? 'bg-primary-600/20 text-primary-400'
             : 'text-slate-400 hover:text-white'
@@ -132,7 +132,7 @@ export function CanvasToolbar() {
       </button>
       <button
         onClick={toggleSnapToGrid}
-        className={`rounded-md p-1.5 transition-colors ${
+        className={`flex-shrink-0 rounded-md p-1.5 transition-colors ${
           snapToGrid
             ? 'bg-primary-600/20 text-primary-400'
             : 'text-slate-400 hover:text-white'
@@ -142,22 +142,22 @@ export function CanvasToolbar() {
         <Magnet size={16} />
       </button>
 
-      <div className="mx-2 h-5 w-px bg-slate-600" />
+      <div className="mx-1 h-5 w-px flex-shrink-0 bg-slate-600 sm:mx-2" />
 
       {/* Zoom controls */}
       <button
         onClick={handleZoomOut}
-        className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
+        className="flex-shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
         title={t('toolbar.zoomOut')}
       >
         <ZoomOut size={16} />
       </button>
-      <span className="min-w-[3rem] text-center text-xs text-slate-300">
+      <span className="min-w-[3rem] flex-shrink-0 text-center text-xs text-slate-300">
         {Math.round(zoom * 100)}%
       </span>
       <button
         onClick={handleZoomIn}
-        className="rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
+        className="flex-shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white"
         title={t('toolbar.zoomIn')}
       >
         <ZoomIn size={16} />
@@ -169,7 +169,7 @@ export function CanvasToolbar() {
       {/* Language switcher */}
       <button
         onClick={toggleLanguage}
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+        className="flex flex-shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700"
         title={t('toolbar.language')}
       >
         <Globe size={14} />

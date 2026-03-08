@@ -53,10 +53,10 @@
   "sizes": {
     "tiny": "Apró (12mm)",
     "small": "Kicsi (20mm)",
-    "medium": "Közepes (20mm)",
-    "large": "Nagy (40mm)",
-    "huge": "Hatalmas (65mm)",
-    "gargantuan": "Gigantikus (90mm)"
+    "medium": "Közepes (25mm)",
+    "large": "Nagy (50mm)",
+    "huge": "Hatalmas (75mm)",
+    "gargantuan": "Gigantikus (100mm)"
   },
   "overlay": {
     "title": "Díszítések",

@@ -57,7 +57,7 @@ export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
   }, []);
 
   const handleStageClick = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
+    (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
       // Click on empty area → deselect
       if (e.target === e.target.getStage()) {
         clearSelection();

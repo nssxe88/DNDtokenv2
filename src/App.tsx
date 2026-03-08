@@ -10,6 +10,7 @@ import { ProjectManagerModal } from './components/modals/ProjectManagerModal.tsx
 import { AdminPanel } from './components/admin/AdminPanel.tsx';
 import { AdSenseProvider } from './components/ads/AdSenseProvider.tsx';
 import { CookieConsentBanner } from './components/ads/CookieConsentBanner.tsx';
+import { AssetLibraryDrawer } from './components/library/AssetLibraryDrawer.tsx';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.ts';
 import { useStore } from './store/index.ts';
 
@@ -34,6 +35,7 @@ function EditorPage() {
     <div className="flex h-screen w-screen overflow-hidden">
       <Sidebar />
       <CanvasArea />
+      <AssetLibraryDrawer />
       <ImagePositionModal />
       <ExportModal />
       <GalleryUploadModal />

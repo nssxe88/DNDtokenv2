@@ -1,14 +1,21 @@
 import { useEffect } from 'react';
 import { AD_CONFIG } from './adConfig.ts';
+import { useStore } from '../../store/index.ts';
 
 /**
  * Loads the Google AdSense script tag asynchronously.
  * Should be mounted once at the app root level.
  * Does nothing if VITE_ADSENSE_ENABLED is not 'true'.
+ * GDPR: Only loads the script AFTER cookie consent is given.
  */
 export function AdSenseProvider({ children }: { children: React.ReactNode }) {
+  const cookieConsent = useStore((s) => s.cookieConsent);
+
   useEffect(() => {
     if (!AD_CONFIG.enabled || !AD_CONFIG.clientId) return;
+
+    // GDPR: Do not load AdSense script until user has given consent
+    if (!cookieConsent) return;
 
     // Check if script is already loaded
     const existing = document.querySelector(
@@ -29,7 +36,7 @@ export function AdSenseProvider({ children }: { children: React.ReactNode }) {
     };
 
     document.head.appendChild(script);
-  }, []);
+  }, [cookieConsent]);
 
   return <>{children}</>;
 }
